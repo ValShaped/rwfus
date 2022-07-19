@@ -91,7 +91,7 @@ EOF
     check_panic 3
 
     echo "Step 4: Activate the unit files"
-    for mount_unit in `basename $unit_dir/*.mount`; do
+    for mount_unit in `basename -a $unit_dir/*.mount`; do
         echo "Activating $mount_unit."
         sudo systemctl enable --now "$mount_unit"
         check_panic 4
