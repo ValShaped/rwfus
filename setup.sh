@@ -36,8 +36,8 @@ Logfile="${Project_Name@L}.log"
 function perform_setup () {
     printf "    RWfus $Product_Version    \nMade with <3 by Val\n\n"
 
-    # Get list of dirs
-    local dir_list=${@:-"/usr /etc/pacman.d"}
+    # Get list of dirs, or go with pacmaniacal defaults
+    local dir_list=${@:-"/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"}
 
     # directories
     local tmp="tmp"
