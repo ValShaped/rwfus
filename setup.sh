@@ -59,7 +59,6 @@ $target_name
   - wanted-by: $target_wanted_by
 EOF
     generate_controlling_target "$target_wanted_by" > "$unit_dir/$target_name"
-    check_panic 1
     echo "$Unit_Destination/$target_name" >> "$Logfile"
 
     for lowerdir in $dir_list; do
@@ -82,7 +81,6 @@ EOF
         echo "$Unit_Destination/$unit_name" >> "$Logfile"
 
     done
-    check_panic 1;
 
     echo "Step 2: Move the systemd unit files into /etc/systemd/system"
     sudo cp -r "$unit_dir/." "$Unit_Destination"
