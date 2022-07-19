@@ -141,7 +141,10 @@ EOF
 
 # Sync isn't required in this particular case, but eh
 function check_panic () {
-    if [ -z $? ]; then exit "$1"; fi; sleep "${2:-0.05}"
+    if [ $? ]; then 
+        exit "$1"; 
+    fi; 
+    sleep "${2:-0.05}"
 }
 
 #* Script setup
