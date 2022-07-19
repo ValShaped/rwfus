@@ -23,7 +23,7 @@ LICENSE
 
 Project_Name="RWfus" 
 Project_Description="$Project_Name: RW Overlayfs for SteamOS"
-Project_Version="0.1.2"
+Project_Version="0.1.3"
 
 # the dir where the .rwfus directory will end up
 Overlay_Destination="/home/.${Project_Name@L}"
