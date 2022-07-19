@@ -44,7 +44,7 @@ function perform_setup () {
     local unit_dir="$tmp/system"
 
     # overlay directories
-    local overlay_base=".${Project_Name@L}"
+    local overlay_base=""
     local overlay_work_base="$overlay_base/.work"
 
     # target parameters
@@ -140,9 +140,9 @@ EOF
 # Sync isn't required in this particular case, but eh
 function check_panic () {
     if [ $? ]; then 
+        echo $?
         exit "$1"; 
-    fi; 
-    sleep "${2:-0.05}"
+    fi;
 }
 
 #* Script setup
