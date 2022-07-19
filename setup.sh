@@ -23,7 +23,7 @@ LICENSE
 
 Project_Name="RWfus" 
 Project_Description="$Project_Name: RW Overlayfs for SteamOS"
-Project_Version="0.1.0"
+Project_Version="0.1.2"
 
 # the dir where the .rwfus directory will end up
 Overlay_Destination="/home/.${Project_Name@L}"
@@ -34,7 +34,7 @@ Logfile="${Project_Name@L}.log"
 
 # This function sets up new overlayfs mounts for remaining parts of the filesystem
 function perform_setup () {
-    printf "    RWfus $Product_Version    \nMade with <3 by Val\n\n"
+    printf "    $Project_Name $Project_Version    \nMade with <3 by Val\n\n"
 
     # Get list of dirs, or go with pacmaniacal defaults
     local dir_list=${@:-"/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"}
