@@ -67,13 +67,13 @@ EOF
 
         # directory structure is flat, so filesystems don't overlap
         # this does mean you can make multiple independent upperdir layers over the same directory tree.
-        local upperdir="$overlay_base${unit_name/.mount/}"
-        local workdir="$overlay_work_base${unit_name/.mount/}"
+        local upperdir="$overlay_base/${unit_name/.mount/}"
+        local workdir="$overlay_work_base/${unit_name/.mount/}"
         cat <<-EOF
 $unit_name
   - lower: $lowerdir
-  - upper: $Overlay_Destination/$upperdir
-  -  work: $Overlay_Destination/$workdir
+  - upper: $Overlay_Destination$upperdir
+  -  work: $Overlay_Destination$workdir
 EOF
 
         mkdir -p "$tmp/$upperdir" "$tmp/$workdir"; check_panic 1;
