@@ -139,7 +139,7 @@ EOF
 
 # Sync isn't required in this particular case, but eh
 function check_panic () {
-    if [ $? ]; then 
+    if [ $? != 0 ]; then 
         echo $?
         exit "$1"; 
     fi;
