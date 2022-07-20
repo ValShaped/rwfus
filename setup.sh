@@ -119,7 +119,7 @@ Description=$Project_Description: $lower
 Requires=$wanted_by
 
 [Mount]
-Options=lowerdir=$lower,upperdir=$upper,workdir=$work
+Options=index=off,metacopy=off,lowerdir=$lower,upperdir=$upper,workdir=$work
 Type=overlay
 What=overlay
 Where=$lower
