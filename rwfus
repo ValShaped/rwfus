@@ -52,19 +52,19 @@ USAGE:
     $0 [FLAGS] [OPTIONS] [--] [DIRECTORY]...
 
 FLAGS:
-    -i, --install       Install $Project_Name
-    -u, --update        Re-generate systemd mount files, without touching data
-    -r, --remove        Remove ALL FILES AND DIRECTORIES associated with $Project_Name
+    -h, --help          Print this help text
 
-    -e, --enable        Activate $Project_Name's overlay mounts
-    -d, --disable       Deactivate $Project_Name's overlay mounts
+    -i, --install*      Install $Project_Name
+    -u, --update*       Re-generate systemd mount files, without touching data
+    -r, --remove*       Remove ALL FILES AND DIRECTORIES associated with $Project_Name
+
+    -e, --enable*       Activate $Project_Name's overlay mounts
+    -d, --disable*      Deactivate $Project_Name's overlay mounts
     -s, --status        Get the status of $Project_Name's overlay mounts
 
     -t, --test          Use fake directory targets when performing operations
 
-        --add-to-bin    Add $Project_Name to the overlaid /usr/bin, if you want
-                        This is kind of silly to do, since if $Project_Name breaks
-                        you'll have to look into $Primary_Destination/usr/bin to fix it.
+    * flags marked with a star require root, unless the --test flag is set.
 
 OPTIONS:
     -l, --logfile <filename>    Specify the location of $Project_Name's log file
@@ -82,7 +82,10 @@ EOF
 LONGOPTS="help,install,update,remove,enable,disable,status,test,add-to-bin,logfile:,basedir:"
 SHORTOPTS="hiuredstl:b:"
 PARSED=`getopt --options "$SHORTOPTS" --longoptions "$LONGOPTS" --name $0 -- $@`
-if [[ $? != 0 ]]; then exit -128; fi
+if [[ $? != 0 ]]; then
+    echo "Usage: $0 [-hiuredst] [-l logfile_name] [-h basedir] [/dir1 /dir2 ...]"
+    exit -128;
+fi
 eval set -- "$PARSED"
 
 while true; do
@@ -128,10 +131,10 @@ while true; do
             shift
             ;;
     # Memes
-        --add-to-bin)
-            add_this_to_usr_bin
-            exit
-        ;;
+        # --add-to-bin)
+        #     add_this_to_usr_bin
+        #     exit
+        # ;;
     # Options
         -l|--logfile)
             Logfile="$2"
@@ -150,7 +153,7 @@ while true; do
             break
             ;;
         *)
-            echo "Usage: $0 [-iured] [-l logfile_name] [-h homedir] [/dir1 /dir2 ...]"
+            echo "Usage: $0 [-hiuredst] [-l logfile_name] [-h basedir] [/dir1 /dir2 ...]"
             exit -1
             ;;
     esac
