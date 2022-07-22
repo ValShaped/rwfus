@@ -166,9 +166,8 @@ Log --new
 # make logfile owned by deck:deck
 chown $(logname):$(id -gn $(logname)) $Logfile > /dev/null 2>&1
 Log cat <<EOF
-$Project_Name v$Project_Version
+$Project_Name v$Project_Version ${TESTMODE+[Test Mode active]}
 $Project_Description
-${TESTMODE+[Test Mode active]}
 
 $Project_Name directory: $Primary_Destination
 Unit Storage directory: $Unit_Primary_Destination
