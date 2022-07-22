@@ -97,7 +97,7 @@ function disable_units {
     Log echo "disable_units $@"
     local generated_units_location="$1"
     # Print command instead of enabling units, in test mode
-    Log Test systemctl disable -- `ls -- $generated_units_location`
+    Log Test systemctl disable --now -- `ls -- $generated_units_location`
     if [[ $? != 0 ]]; then echo "Error when disabling units. See "$Logfile" for information."; fi
 }
 
