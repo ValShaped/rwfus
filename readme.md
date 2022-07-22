@@ -10,11 +10,14 @@ By default, mounts /usr /etc/pacman.d /var/lib/pacman and /var/cache/pacman, so 
 
 1. `git clone https://github.com/ValShaped/rwfus.git`
 2. `cd rwfus`
-3. `./setup.sh`
-    - Step 1 generates all the configs and directory structure, in a temp folder located alongside the script.
-    - Step 2 copies the systemd unit files to /etc/systemd/system
-    - Step 3 copies the new upper and work directories to /home/.rwfus
-    - Step 4 activates all the newly generated unit files
+3. `./rwfus`
+
+### Usage:
+```
+rwfus --help
+rwfus [ -[iureds][t] ] [-l path/to/logfile.log] [-b /abs/path/to/basedir]
+rwfus [-iureds | --install | --update | --remove | --enable | --disable | --status] [--test] [--logfile path/to/logfile.log] [--basedir /abs/path/to/basedir/.rwfus]
+```
 
 ### Pacman Setup, once complete:
 ```
