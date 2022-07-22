@@ -151,6 +151,8 @@ done
 
 # create a new logfile
 Log --new
+# make logfile owned by deck:deck
+chown $EUID:$EGID $Logfile > /dev/null 2>&1
 Log cat <<EOF
 $Project_Name v$Project_Version
 $Project_Description
