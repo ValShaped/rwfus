@@ -162,13 +162,17 @@ Systemd directory: $Unit_Final_Destination
 
 EOF
 
-case Operation in
-    enable_units|disable_units|stat_units)
-        echo AAAAAAAAAAAAAAAAAAAAA
-        Log $Operation ${Unit_Primary_Destination}
+case "$Operation" in
+    "perform_install"|"perform_update"|"perform_remove_all")
+        $Operation $@
+    ;;
+    "enable_units"|"disable_units"|"stat_units")
+        $Operation ${Unit_Primary_Destination}
+        exit;
     ;;
     *)
-        $Operation $@
+        Log -p echo "I'm sorry, what? $Operation?"
+        exit -1;
     ;;
 esac
 
