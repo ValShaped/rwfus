@@ -22,7 +22,7 @@ function generate_new_units {
             *.mount)
                 local lower=`systemd-escape -up "${unit%%.mount}"`
                 local upper="$Primary_Destination/${unit%%.mount}"
-                local  work="$Primary_Destination/.work/${unit%%.mount}"
+                local  work="$Work_Destination/${unit%%.mount}"
                 generate_overlay_mount_unit "$lower" "$upper" "$work" "$target_name" > "$unit_dir/$unit"
             ;;
             *) # not a mount unit

@@ -31,6 +31,7 @@ Project_Version="0.2.0"
 
 # Default destinations
 Primary_Destination="/home/.${Project_Name@L}"         # Where all the files will go
+Work_Destination="$Primary_Destination/.work"          # Where the overlayfs work dirs will go
 Unit_Primary_Destination="$Primary_Destination/.units" # Where all the generated units will go
 Unit_Final_Destination="/etc/systemd/system"           # Where systemd expects units to be
 

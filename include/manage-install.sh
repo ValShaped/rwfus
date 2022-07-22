@@ -13,6 +13,7 @@ function perform_install {
    for dir in $dir_list; do
       local escaped_dir=`systemd-escape -p -- "$dir"`
       Log mkdir -pv "${Primary_Destination}/${escaped_dir}"
+      Log mkdir -pv "${Work_Destination}/${escaped_dir}"
    done
 
    # generate new units
