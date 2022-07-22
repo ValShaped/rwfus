@@ -33,6 +33,9 @@ function perform_install {
    # enable units
    Log -p echo "4. Enabling units"
    enable_units "$Unit_Primary_Destination"
+
+   Log -p echo -e "Done!\n"
+   stat_units
 }
 
 function perform_update {
