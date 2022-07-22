@@ -81,8 +81,10 @@ EOF
 # Parse options
 LONGOPTS="help,install,update,remove,enable,disable,status,test,add-to-bin,logfile:,basedir:"
 SHORTOPTS="hiuredstl:b:"
-eval set -- `getopt --options "$SHORTOPTS" --longoptions "$LONGOPTS" --name $0 -- $@`
+PARSED=`getopt --options "$SHORTOPTS" --longoptions "$LONGOPTS" --name $0 -- $@`
 if [[ $? != 0 ]]; then exit -128; fi
+eval set -- "$PARSED"
+
 while true; do
     case "$1" in
     # Help
