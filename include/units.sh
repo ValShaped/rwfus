@@ -105,7 +105,7 @@ function stat_units {
     Log echo "stat_units $@"
     local generated_units_location="$1"
     # Print command instead of enabling units, in test mode
-    Log -p Test systemctl status --lines 0 --no-pager -- `ls -- /home/.rwfus/.units`
+    SYSTEMD_COLORS=1 Log -p Test systemctl status --lines 0 --no-pager -- `ls -- /home/.rwfus/.units`
     echo "For more information run 'systemctl status [unit.name]'"
     if [[ $? != 0 ]]; then echo "Error when disabling units. See "$Logfile" for information."; fi
 }
