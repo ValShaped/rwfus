@@ -38,8 +38,7 @@ Unit_Final_Destination="/etc/systemd/system"           # Where systemd expects u
 # Default Directories list
 #   /usr : /usr/bin, /usr/lib; popular install locations. On path.
 #   /etc/pacman.d /var/lib/pacman /var/cache/pacman : store pacman state
-#   /root : /root/.gnupg /root/gpg.conf /root/common.conf: store gpg state
-Default_Directories="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman /root"
+Default_Directories="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
 # Default logfile name
 Logfile="${Project_Name@L}.log"
 
