@@ -4,7 +4,7 @@
 
 Generator for overlay mount systemd unit files
 
-By default, mounts /usr and /etc/pacman.d, so you can get pacman working properly
+By default, mounts /usr /etc/pacman.d /var/lib/pacman and /var/cache/pacman, so you can get pacman working properly
 
 ### Installation:
 

@@ -1,0 +1,192 @@
+#!/bin/bash
+: <<LICENSE
+      Rwfus.sh: Rwfus - RW OverlayFS for Deck!
+    Copyright (C) 2022 ValShaped (val@soft.fish)
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+LICENSE
+
+cd $(dirname "$BASH_SOURCE[0]")
+source include/lolg.sh
+source include/units.sh
+source include/manage-install.sh
+
+
+# Project metadata
+Project_Name="Rwfus"
+Project_Description="Carry Pacman across SteamOS updates!"
+Project_Version="0.2.0"
+
+# Default destinations
+Primary_Destination="/home/.${Project_Name@L}"         # Where all the files will go
+Work_Destination="$Primary_Destination/.work"          # Where the overlayfs work dirs will go
+Unit_Primary_Destination="$Primary_Destination/.units" # Where all the generated units will go
+Unit_Final_Destination="/etc/systemd/system"           # Where systemd expects units to be
+
+# Default Directories list
+Default_Directories="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
+# Default logfile name
+Logfile="${Project_Name@L}.log"
+
+# Default operation
+Operation="perform_install"
+
+function print_help {
+    cat <<EOF
+$Project_Name v$Project_Version
+$Project_Description
+
+USAGE:
+    $0 [FLAGS] [OPTIONS] [--] [DIRECTORY]...
+
+FLAGS:
+    -h, --help          Print this help text
+
+    -i, --install*      Install $Project_Name
+    -u, --update*       Re-generate systemd mount files, without touching data
+    -r, --remove*       Remove ALL FILES AND DIRECTORIES associated with $Project_Name
+
+    -e, --enable*       Activate $Project_Name's overlay mounts
+    -d, --disable*      Deactivate $Project_Name's overlay mounts
+    -s, --status        Get the status of $Project_Name's overlay mounts
+
+    -t, --test          Use fake directory targets when performing operations
+
+    * flags marked with a star require root, unless the --test flag is set.
+
+OPTIONS:
+    -l, --logfile <filename>    Specify the location of $Project_Name's log file
+                                    Default: ./$Logfile
+    -b, --basedir <directory>   Specify the location of $Project_Name's base directory
+                                    Default: $Primary_Destination
+
+ARGS:
+    <DIRECTORY>...      List of directories to create overlays for
+                            Defaults: $Default_Directories
+EOF
+}
+
+# Parse options
+LONGOPTS="help,install,update,remove,enable,disable,status,test,add-to-bin,logfile:,basedir:"
+SHORTOPTS="hiuredstl:b:"
+PARSED=`getopt --options "$SHORTOPTS" --longoptions "$LONGOPTS" --name $0 -- $@`
+if [[ $? != 0 ]]; then
+    echo "Usage: $0 [-hiuredst] [-l logfile_name] [-h basedir] [/dir1 /dir2 ...]"
+    exit -128;
+fi
+eval set -- "$PARSED"
+
+while true; do
+    case "$1" in
+    # Help
+        -h|--help)
+            print_help
+            exit 0
+        ;;
+    # Installation operations
+        -i|--install)
+            Operation="perform_install"
+            shift
+            ;;
+        -u|--update)
+            Operation="perform_update"
+            shift
+            ;;
+        -r|--remove)
+            Operation="perform_remove_all"
+            shift
+            ;;
+    # Enablement control operations
+        -e|--enable)
+            Operation="enable_units"
+            shift
+            ;;
+        -d|--disable)
+            Operation="disable_units"
+            shift
+            ;;
+        -s|--status)
+            Operation="stat_units"
+            shift
+            ;;
+    # Test mode
+        -t|--test)
+            Primary_Destination="${PWD}/test${Primary_Destination}"
+            Unit_Primary_Destination="$Primary_Destination/.units"
+            Unit_Final_Destination="${PWD}/test$Unit_Final_Destination"
+            mkdir -p "$Unit_Final_Destination"
+            TESTMODE=1
+            shift
+            ;;
+    # Memes
+        # --add-to-bin)
+        #     add_this_to_usr_bin
+        #     exit
+        # ;;
+    # Options
+        -l|--logfile)
+            Logfile="$2"
+            shift 2
+            ;;
+        -b|--basedir)
+            if $TESTMODE; then exit -128; fi
+            # Update the primary destinations
+            Primary_Destination="$2"
+            Unit_Primary_Destination="$Primary_Destination/.units"
+            shift 2
+            ;;
+
+        --)
+            shift
+            break
+            ;;
+        *)
+            echo "Usage: $0 [-hiuredst] [-l logfile_name] [-h basedir] [/dir1 /dir2 ...]"
+            exit -1
+            ;;
+    esac
+done
+
+
+
+# create a new logfile
+Log --new
+# make logfile owned by deck:deck
+chown $(logname):$(id -gn $(logname)) $Logfile > /dev/null 2>&1
+Log cat <<EOF
+$Project_Name v$Project_Version ${TESTMODE+[Test Mode active]}
+$Project_Description
+
+$Project_Name directory: $Primary_Destination
+Unit Storage directory: $Unit_Primary_Destination
+Systemd directory: $Unit_Final_Destination
+
+EOF
+
+case "$Operation" in
+    "perform_install"|"perform_update"|"perform_remove_all")
+        $Operation $@
+    ;;
+    "enable_units"|"disable_units"|"stat_units")
+        $Operation ${Unit_Primary_Destination} "STAT!"
+        exit;
+    ;;
+    *)
+        Log -p echo "I'm sorry, what? $Operation?"
+        exit -1;
+    ;;
+esac
+
+exit 0
