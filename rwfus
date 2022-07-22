@@ -181,7 +181,7 @@ case "$Operation" in
         $Operation $@
     ;;
     "enable_units"|"disable_units"|"stat_units")
-        $Operation ${Unit_Primary_Destination}
+        $Operation ${Unit_Primary_Destination} "STAT!"
         exit;
     ;;
     *)

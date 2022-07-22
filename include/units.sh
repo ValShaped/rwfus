@@ -93,7 +93,9 @@ function enable_units {
     # Print command instead of enabling units, in test mode
     Log Test systemctl enable --now -- `ls -- $generated_units_location`
     if [[ $? != 0 ]]; then echo "Error when enabling units. See "$Logfile" for information."; fi
-    stat_units $generated_units_location
+    if [[ -v $2 ]]; then
+        stat_units $generated_units_location
+    fi
 }
 
 function disable_units {
@@ -103,7 +105,9 @@ function disable_units {
     # Print command instead of enabling units, in test mode
     Log Test systemctl disable --now -- `ls -- $generated_units_location`
     if [[ $? != 0 ]]; then echo "Error when disabling units. See "$Logfile" for information."; fi
-    stat_units $generated_units_location
+    if [[ -v $2 ]]; then
+        stat_units $generated_units_location
+    fi
 }
 
 function stat_units {
