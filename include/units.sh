@@ -86,6 +86,7 @@ EOF
 # Unit management
 #
 function enable_units {
+    check_permissions
     Log echo "enable_units $@"
     local generated_units_location="$1"
     # Print command instead of enabling units, in test mode
@@ -94,6 +95,7 @@ function enable_units {
 }
 
 function disable_units {
+    check_permissions
     Log echo "disable_units $@"
     local generated_units_location="$1"
     # Print command instead of enabling units, in test mode
@@ -111,6 +113,7 @@ function stat_units {
 }
 
 function delete_units {
+    check_permissions
     Log echo "delete_units $@"
     local generated_units_location="$1"; local out=0
     # Print command instead of enabling units, in test mode

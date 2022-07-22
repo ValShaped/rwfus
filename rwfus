@@ -79,7 +79,7 @@ EOF
 }
 
 # Parse options
-LONGOPTS="help,install,update,remove,enable,disable,status,test,add-to-path,logfile:,basedir:"
+LONGOPTS="help,install,update,remove,enable,disable,status,test,add-to-bin,logfile:,basedir:"
 SHORTOPTS="hiuredstl:b:"
 eval set -- `getopt --options "$SHORTOPTS" --longoptions "$LONGOPTS" --name $0 -- $@`
 while true; do
@@ -124,6 +124,11 @@ while true; do
             TESTMODE=1
             shift
             ;;
+    # Memes
+        --add-to-bin)
+            add_this_to_usr_bin
+            exit
+        ;;
     # Options
         -l|--logfile)
             Logfile="$2"
