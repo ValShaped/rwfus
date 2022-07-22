@@ -43,6 +43,7 @@ Requires=$wanted_by
 
 [Mount]
 Options=index=off,metacopy=off,lowerdir=$lower,upperdir=$upper,workdir=$work
+LazyUnmount=true
 Type=overlay
 What=overlay
 Where=$lower
