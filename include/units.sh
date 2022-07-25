@@ -90,6 +90,8 @@ function enable_units {
     check_permissions
     Log echo "enable_units $@"
     local generated_units_location="$1"
+    # Disable pacman-cleanup.service, which automatically deletes pacman keyring on reboot
+    Log Test systemctl disable --now -- "pacman-cleanup.service"
     # Print command instead of enabling units, in test mode
     Log Test systemctl enable --now -- `ls -- $generated_units_location`
     if [[ $? != 0 ]]; then echo "Error when enabling units. See "$Logfile" for information."; fi
@@ -104,6 +106,8 @@ function disable_units {
     local generated_units_location="$1"
     # Print command instead of enabling units, in test mode
     Log Test systemctl disable --now -- `ls -- $generated_units_location`
+    # Enable pacman-cleanup.service, which automatically deletes pacman keyring on reboot
+    Log Test systemctl enable --now -- "pacman-cleanup.service"
     if [[ $? != 0 ]]; then echo "Error when disabling units. See "$Logfile" for information."; fi
     if [[ -v $2 ]]; then
         stat_units $generated_units_location
