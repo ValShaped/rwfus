@@ -25,7 +25,7 @@ Target_After="steamos-offload.target"
 # Mounts happen between "After" and "WantedBy"
 Target_Wanted_By="multi-user.target"
 
-source include/testlog.sh
+source rwfus_include/testlog.sh
 
 function generate_new_units {
     Log echo -e "generate_new_units $@"

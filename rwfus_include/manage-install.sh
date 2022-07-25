@@ -18,8 +18,8 @@
 LICENSE
 
 # Install
-source include/units.sh
-source include/testlog.sh
+source rwfus_include/units.sh
+source rwfus_include/testlog.sh
 
 function perform_install {
     check_permissions
@@ -118,14 +118,14 @@ function perform_remove_all {
 function add_to_bin {
     check_permissions
     Log -p echo "Warning: Disabling/Removing $Project_Name will remove this from PATH"
-    local project_bin_dir="$Primary_Destination/usr/local/bin/${Project_Name@L}"
+    local project_bin_dir="$Primary_Destination/usr/local/bin"
     Log mkdir -vp -- "$project_bin_dir"
     if [[ $? != 0 ]]; then
         Log -p echo "$project_bin_dir is not writable. Is $Project_Name installed?"
         exit -3
     fi
     # Move include/ to the new dir
-    Log cp -vr ./include "$project_bin_dir/"
+    Log cp -vr ./rwfus_include "$project_bin_dir/"
     # Move the main file to the new dir
     Log cp -vr $0 "$project_bin_dir/"
     Log -p echo "Added $Project_Name to PATH"
@@ -133,11 +133,10 @@ function add_to_bin {
 
 function remove_from_bin {
     check_permissions
-    local project_bin_dir="$Primary_Destination/usr/local/bin/${Project_Name@L}"
+    local project_bin_dir="$Primary_Destination/usr/local/bin"
     Log -p echo "Removing $Project_Name from $project_bin_dir"
-    Log rm -vr "$project_bin_dir"
-    if [[ $? != 0 ]]; then
-        Log -p echo "Not found: $project_bin_dir"
-    fi
+    Log rm -vr "$project_bin_dir/rwfus_include"
+    Log rm -v  "$project_bin_dir/$0"
+    if [[ $? != 0 ]]; then return -1; fi
     Log -p echo "Removed $Project_Name from PATH"
 }

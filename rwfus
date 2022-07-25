@@ -19,9 +19,9 @@
 LICENSE
 
 cd $(dirname "$BASH_SOURCE[0]")
-source include/testlog.sh
-source include/units.sh
-source include/manage-install.sh
+source rwfus_include/testlog.sh
+source rwfus_include/units.sh
+source rwfus_include/manage-install.sh
 
 
 # Project metadata
