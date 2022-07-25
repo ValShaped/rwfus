@@ -1,3 +1,21 @@
+: <<LICENSE
+      units.sh: Rwfus
+    Copyright (C) 2022 ValShaped (val@soft.fish)
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+LICENSE
 
 # Modify these to change when the mounts take place during boot
 # Setting this to too early a value will cause mounting to fail
@@ -7,7 +25,7 @@ Target_After="steamos-offload.target"
 # Mounts happen between "After" and "WantedBy"
 Target_Wanted_By="multi-user.target"
 
-source include/lolg.sh
+source include/testlog.sh
 
 function generate_new_units {
     Log echo -e "generate_new_units $@"
@@ -94,7 +112,7 @@ function enable_units {
     Log Test systemctl mask -- "pacman-cleanup.service"
     # Print command instead of enabling units, in test mode
     Log Test systemctl enable --now -- `ls -- $generated_units_location`
-    if [[ $? != 0 ]]; then echo "Error when enabling units. See "$Logfile" for information."; fi
+    if [[ $? != 0 ]]; then echo "Error when enabling units. See "$Logfile" for information."; return -1; fi
     if [[ -v $2 ]]; then
         stat_units $generated_units_location
     fi
@@ -108,7 +126,7 @@ function disable_units {
     Log Test systemctl disable --now -- `ls -- $generated_units_location`
     # Unmask pacman-cleanup.service, which automatically deletes pacman keyring on reboot
     Log Test systemctl unmask -- "pacman-cleanup.service"
-    if [[ $? != 0 ]]; then echo "Error when disabling units. See "$Logfile" for information."; fi
+    if [[ $? != 0 ]]; then echo "Error when disabling units. See "$Logfile" for information."; return 1; fi
     if [[ -v $2 ]]; then
         stat_units $generated_units_location
     fi
@@ -118,10 +136,10 @@ function stat_units {
     Log echo "stat_units $@"
     local generated_units_location="$1"
     # Print command instead of enabling units, in test mode
-    SYSTEMD_COLORS=1 Test systemctl status --lines 0 --no-pager -- `ls -- /home/.rwfus/.units` \
+    SYSTEMD_COLORS=1 Test systemctl status --lines 0 --no-pager -- `ls -- $Primary_Destination/.units` \
         | grep -E --color=never " - |Loaded|Active"
     echo "For more information run 'systemctl status [unit.name]'"
-    if [[ $? != 0 ]]; then echo "Error when disabling units. See "$Logfile" for information."; fi
+    if [[ $? != 0 ]]; then echo "Error when disabling units. See "$Logfile" for information."; return -1; fi
 }
 
 function delete_units {
@@ -133,5 +151,5 @@ function delete_units {
         Log rm -v -- "$Unit_Final_Destination/$unit";
         out=$(( $out+$? ))
     done
-    if [[ $out != 0 ]]; then echo "Error when deleting units. See "$Logfile" for information."; fi
+    if [[ $out != 0 ]]; then echo "Error when deleting units. See "$Logfile" for information."; return -1; fi
 }

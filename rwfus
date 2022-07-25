@@ -1,6 +1,6 @@
 #!/bin/bash
 : <<LICENSE
-      Rwfus.sh: Rwfus - RW OverlayFS for Deck!
+      rwfus: Rwfus - RW OverlayFS for Deck!
     Copyright (C) 2022 ValShaped (val@soft.fish)
 
     This library is free software; you can redistribute it and/or
@@ -19,7 +19,7 @@
 LICENSE
 
 cd $(dirname "$BASH_SOURCE[0]")
-source include/lolg.sh
+source include/testlog.sh
 source include/units.sh
 source include/manage-install.sh
 
@@ -27,7 +27,7 @@ source include/manage-install.sh
 # Project metadata
 Project_Name="Rwfus"
 Project_Description="Carry Pacman across SteamOS updates!"
-Project_Version="0.2.0"
+Project_Version="0.2.1"
 
 # Default destinations
 Primary_Destination="/home/.${Project_Name@L}"         # Where all the files will go
@@ -43,7 +43,7 @@ Default_Directories="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
 Logfile="${Project_Name@L}.log"
 
 # Default operation
-Operation="perform_install"
+Default_Operation="perform_install"
 
 function print_help {
     cat <<EOF
@@ -54,7 +54,7 @@ USAGE:
     $0 [FLAGS] [OPTIONS] [--] [DIRECTORY]...
 
 FLAGS:
-    -h, --help          Print this help text
+    -h, --help              Print this help text
 
     -i, --install*      Install $Project_Name
     -u, --update*       Re-generate systemd mount files, without touching data
@@ -64,9 +64,12 @@ FLAGS:
     -d, --disable*      Deactivate $Project_Name's overlay mounts
     -s, --status        Get the status of $Project_Name's overlay mounts
 
+        --install-bin* Copy $Project_Name into /usr/local/bin/${Project_Name@L}
+        --remove-bin*  Remove $Project_Name from /usr/local/bin/${Project_Name@L}
     -t, --test          Use fake directory targets when performing operations
 
     * flags marked with a star require root, unless the --test flag is set.
+    + flags marked with a + can be combined with other flags
 
 OPTIONS:
     -l, --logfile <filename>    Specify the location of $Project_Name's log file
@@ -80,8 +83,22 @@ ARGS:
 EOF
 }
 
+# create a new logfile
+Log --new
+# make logfile owned by deck:deck
+chown $(logname):$(id -gn $(logname)) $Logfile > /dev/null 2>&1
+Log cat <<EOF
+$Project_Name v$Project_Version ${TESTMODE+[Test Mode active]}
+$Project_Description
+
+$Project_Name directory: $Primary_Destination
+Unit Storage directory: $Unit_Primary_Destination
+Systemd directory: $Unit_Final_Destination
+
+EOF
+
 # Parse options
-LONGOPTS="help,install,update,remove,enable,disable,status,test,add-to-bin,logfile:,basedir:"
+LONGOPTS="help,install,update,remove,enable,disable,status,test,install-bin,remove-bin,logfile:,basedir:"
 SHORTOPTS="hiuredstl:b:"
 PARSED=`getopt --options "$SHORTOPTS" --longoptions "$LONGOPTS" --name $0 -- $@`
 if [[ $? != 0 ]]; then
@@ -132,11 +149,17 @@ while true; do
             TESTMODE=1
             shift
             ;;
-    # Memes
-        # --add-to-bin)
-        #     add_this_to_usr_bin
-        #     exit
-        # ;;
+    # on-path installation
+        --install-bin)
+            add_to_bin
+            : ${Operation:="none"}
+            shift
+        ;;
+        --remove-bin)
+            remove_from_bin
+            : ${Operation:="none"}
+            shift
+        ;;
     # Options
         -l|--logfile)
             Logfile="$2"
@@ -161,29 +184,14 @@ while true; do
     esac
 done
 
-
-
-# create a new logfile
-Log --new
-# make logfile owned by deck:deck
-chown $(logname):$(id -gn $(logname)) $Logfile > /dev/null 2>&1
-Log cat <<EOF
-$Project_Name v$Project_Version ${TESTMODE+[Test Mode active]}
-$Project_Description
-
-$Project_Name directory: $Primary_Destination
-Unit Storage directory: $Unit_Primary_Destination
-Systemd directory: $Unit_Final_Destination
-
-EOF
-
-case "$Operation" in
+case "${Operation:=$Default_Operation}" in
     "perform_install"|"perform_update"|"perform_remove_all")
         $Operation $@
     ;;
     "enable_units"|"disable_units"|"stat_units")
         $Operation ${Unit_Primary_Destination} "STAT!"
-        exit;
+    ;;
+    "none")
     ;;
     *)
         Log -p echo "I'm sorry, what? $Operation?"
