@@ -40,7 +40,7 @@ Unit_Final_Destination="/etc/systemd/system"           # Where systemd expects u
 #   /etc/pacman.d /var/lib/pacman /var/cache/pacman : store pacman state
 Default_Directories="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
 # Default logfile name
-Logfile="${Project_Name@L}.log"
+Logfile="/tmp/${Project_Name@L}.log"
 
 # Default operation
 Default_Operation="perform_install"
