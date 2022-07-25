@@ -81,7 +81,7 @@ function confirm_remove_all {
 
 function perform_remove_all {
    confirm_remove_all "Are you sure you want to uninstall $Project_Name?"
-   echo "This will remove all software you've installed with pacman," "and revert your Steam Deck back to stock."
+   echo "This will remove all software you've installed with pacman," "and revert your Deck to a pre-$Project_Name state."
    confirm_remove_all "Are you absolutely sure you want to do this?"
 
    check_permissions
