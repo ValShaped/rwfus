@@ -31,7 +31,7 @@ function check_permissions {
 }
 
 function get_logfile_name {
-    printf "\nLogfile saved to $Logfile\n"
+    printf "Logfile saved to $Logfile\n"
 }
 
 function Log {
