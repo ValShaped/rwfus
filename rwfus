@@ -17,92 +17,81 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 LICENSE
-
+caller_dir=${PWD}
 cd $(dirname "$BASH_SOURCE[0]")
 source rwfus_include/testlog.sh
 source rwfus_include/units.sh
 source rwfus_include/manage-install.sh
-
+source rwfus_include/config.sh
 
 # Project metadata
-Project_Name="Rwfus"
-Project_Description="Carry Pacman across SteamOS updates!"
-Project_Version="0.2.1"
+Name="Rwfus"
+Description="Carry Pacman across SteamOS updates!"
+Version="0.2.1"
 
 # Default destinations
-Primary_Destination="/home/.${Project_Name@L}"         # Where all the files will go
-Work_Destination="$Primary_Destination/.work"          # Where the overlayfs work dirs will go
-Unit_Primary_Destination="$Primary_Destination/.units" # Where all the generated units will go
-Unit_Final_Destination="/etc/systemd/system"           # Where systemd expects units to be
+Base_Directory="/home/.${Name@L}"               # Where all the files will go
+Work_Directory="$Base_Directory/.work"        # Where the overlayfs work dirs will go
+Unit_Directory="$Base_Directory/.units"    # Where all the generated units will go
+Systemd_Directory="/etc/systemd/system"         # Where systemd expects units to be
 
 # Default Directories list
 #   /usr : /usr/bin, /usr/lib; popular install locations. On path.
 #   /etc/pacman.d /var/lib/pacman /var/cache/pacman : store pacman state
-Default_Directories="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
-# Default logfile name
-Logfile=`mktemp ${Project_Name@L}.XXXX.log`
+Directories="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
+
+# Default logfile path
+Logfile=`mktemp /tmp/${Name@L}.XXXX.log`
 
 # Default operation
 Default_Operation="perform_install"
 
 function print_help {
     cat <<EOF
-$Project_Name v$Project_Version
-$Project_Description
+$Name v$Version
+$Description
 
 USAGE:
     $0 [FLAGS] [OPTIONS] [--] [DIRECTORY]...
 
 FLAGS:
-    -h, --help              Print this help text
+    -h, --help          Show this help text, then exit
+    -v, --version       Show the version number, then exit
 
-    -i, --install*      Install $Project_Name
+    -i, --install*      Install $Name
     -u, --update*       Re-generate systemd mount files, without touching data
-    -r, --remove*       Remove ALL FILES AND DIRECTORIES associated with $Project_Name
+    -r, --remove*       Remove ALL FILES AND DIRECTORIES associated with $Name
 
-    -e, --enable*       Activate $Project_Name's overlay mounts
-    -d, --disable*      Deactivate $Project_Name's overlay mounts
-    -s, --status        Get the status of $Project_Name's overlay mounts
+    -e, --enable*       Activate $Name's overlay mounts
+    -d, --disable*      Deactivate $Name's overlay mounts
+    -s, --status        Get the status of $Name's overlay mounts
 
-        --install-bin* Copy $Project_Name into /usr/local/bin/${Project_Name@L}
-        --remove-bin*  Remove $Project_Name from /usr/local/bin/${Project_Name@L}
+        --install-bin*  Put $0 into the overlayed /usr/local/bin folder
+        --remove-bin*   Remove $Name from the overlayed /usr/local/bin folder
+
     -t, --test          Use fake directory targets when performing operations
+    -g, --gen-config    Generate a sample config file, which you can use to customize your install
 
     * flags marked with a star require root, unless the --test flag is set.
-    + flags marked with a + can be combined with other flags
 
-OPTIONS:
-    -l, --logfile <filename>    Specify the location of $Project_Name's log file
-                                    Default: ./$Logfile
-    -b, --basedir <directory>   Specify the location of $Project_Name's base directory
-                                    Default: $Primary_Destination
+    OPTIONS:
+    -l, --logfile <path>    Specify the location of $Name's log file
+                                Default: ./$Logfile
+    -c, --config <path>     Specify a configuration file to use
+                                Default: $Base_Directory/
 
 ARGS:
     <DIRECTORY>...      List of directories to create overlays for
-                            Defaults: $Default_Directories
+                            Defaults: $Directories
 EOF
 }
 
-# create a new logfile
-Log --new
-# make logfile owned by deck:deck
-chown $(logname):$(id -gn $(logname)) $Logfile > /dev/null 2>&1
-Log cat <<EOF
-$Project_Name v$Project_Version ${TESTMODE+[Test Mode active]}
-$Project_Description
-
-$Project_Name directory: $Primary_Destination
-Unit Storage directory: $Unit_Primary_Destination
-Systemd directory: $Unit_Final_Destination
-
-EOF
-
 # Parse options
-LONGOPTS="help,install,update,remove,enable,disable,status,test,install-bin,remove-bin,logfile:,basedir:"
-SHORTOPTS="hiuredstl:b:"
+LONGOPTS="help,install,update,remove,enable,disable,status,test,version,install-bin,remove-bin,gen-config,logfile:,config:"
+SHORTOPTS="hiuredstvgl:c:"
 PARSED=`getopt --options "$SHORTOPTS" --longoptions "$LONGOPTS" --name $0 -- $@`
 if [[ $? != 0 ]]; then
-    echo "Usage: $0 [-hiuredst] [-l logfile_name] [-h basedir] [/dir1 /dir2 ...]"
+    echo "Usage: $0 [-hiuredstvg] [-l path/to/logfile] [-c path/to/config] [/dir1 /dir2 ...]"
     exit -128;
 fi
 eval set -- "$PARSED"
@@ -116,60 +105,63 @@ while true; do
         ;;
     # Installation operations
         -i|--install)
-            Operation="perform_install"
+            Operation+="perform_install "
             shift
             ;;
         -u|--update)
-            Operation="perform_update"
+            Operation+="perform_update "
             shift
             ;;
         -r|--remove)
-            Operation="perform_remove_all"
+            Operation+="perform_remove_all "
             shift
             ;;
     # Enablement control operations
         -e|--enable)
-            Operation="enable_units"
+            Operation+="enable_units "
             shift
             ;;
         -d|--disable)
-            Operation="disable_units"
+            Operation+="disable_units "
             shift
             ;;
         -s|--status)
-            Operation="stat_units"
+            Operation+="stat_units "
             shift
             ;;
     # Test mode
         -t|--test)
-            Primary_Destination="${PWD}/test${Primary_Destination}"
-            Unit_Primary_Destination="$Primary_Destination/.units"
-            Unit_Final_Destination="${PWD}/test$Unit_Final_Destination"
-            mkdir -p "$Unit_Final_Destination"
             TESTMODE=1
             shift
             ;;
+        -g|--gen-config)
+            config --store "$caller_dir/${Name@L}.conf"
+            echo "Wrote config to $caller_dir/${Name@L}.conf"
+            exit 0
+            shift
+            ;;
+    # Get information
+        -v|--version)
+            printf "$Name, version $Version\n$Description\n"
+            exit 0
+        ;;
     # on-path installation
         --install-bin)
-            add_to_bin
-            : ${Operation:="none"}
+            Operation+="add_to_bin "
             shift
         ;;
         --remove-bin)
-            remove_from_bin
-            : ${Operation:="none"}
+            Operation+="remove_from_bin "
             shift
         ;;
     # Options
         -l|--logfile)
+            rm "$Logfile"
             Logfile="$2"
             shift 2
             ;;
-        -b|--basedir)
-            if $TESTMODE; then exit -128; fi
-            # Update the primary destinations
-            Primary_Destination="$2"
-            Unit_Primary_Destination="$Primary_Destination/.units"
+        -c|--config)
+            config --load "$2"
             shift 2
             ;;
 
@@ -178,25 +170,48 @@ while true; do
             break
             ;;
         *)
-            echo "Usage: $0 [-hiuredst] [-l logfile_name] [-h basedir] [/dir1 /dir2 ...]"
+            echo "If you just ran $Project_Name, and saw this, you've encountered easter egg #1! Please tell a developer right away."
             exit -1
             ;;
     esac
 done
 
-case "${Operation:=$Default_Operation}" in
-    "perform_install"|"perform_update"|"perform_remove_all")
-        $Operation $@
-    ;;
-    "enable_units"|"disable_units"|"stat_units")
-        $Operation ${Unit_Primary_Destination} "STAT!"
-    ;;
-    "none")
-    ;;
-    *)
-        Log -p echo "I'm sorry, what? $Operation?"
-        exit -1;
-    ;;
-esac
+# Log preamble
+Log --new
+Log cat <<EOF
+$Name v$Version ${TESTMODE+[Test Mode active]}
+$Description
 
+$Name directory: $Base_Directory
+Unit Storage directory: $Unit_Directory
+Systemd directory: $Systemd_Directory
+
+EOF
+
+if [[ $TESTMODE ]]; then
+    Base_Directory="${caller_dir}/test${Base_Directory}"
+    Work_Directory="$Base_Directory/.work"
+    Unit_Directory="$Base_Directory/.units"
+    Systemd_Directory="${caller_dir}/test$Systemd_Directory"
+    mkdir -p "$Systemd_Directory"
+fi
+
+for operation in ${Operation:=$Default_Operation}; do
+    case "$operation" in
+        "perform_install"|"perform_update"|"perform_remove_all")
+            Directories="${@:-$Directories}"
+            $operation $Directories
+        ;;
+        "enable_units"|"disable_units"|"stat_units")
+            $operation ${Unit_Directory} "STAT!"
+        ;;
+        "add_to_bin"|"remove_from_bin")
+            $operation
+        ;;
+        *)
+            Log -p echo "You've encountered easter egg #2, \"$operation\"! Contact a developer and let them know!"
+            exit -1;
+        ;;
+    esac
+done
 exit 0

@@ -34,11 +34,20 @@ function Log {
     case "$1" in
     --new)
         truncate -s 0 -- "$Logfile"
+        if [[ $? != 0 ]]; then
+            echo "Error: Cannot open logfile $Logfile for writing."
+            Logfile="/dev/null"
+            return -1
+        fi
+        # make logfile owned by deck:deck
+        chown $(logname):$(id -gn $(logname 2>/dev/null)) $Logfile > /dev/null 2>&1
+        echo "Logging to $Logfile"
         return 0
         ;;
     -p)
         shift
         $@ | tee -a $Logfile 2>&1
+        return ${PIPESTATUS[0]} # preserve status of the first command
         ;;
     *)
         $@ >> $Logfile 2>&1

@@ -13,11 +13,8 @@ By default, mounts /usr /etc/pacman.d /var/lib/pacman and /var/cache/pacman, so 
 3. `./rwfus`
 
 ### Usage:
-```
-rwfus --help
-rwfus [ -[iureds][t] ] [-l path/to/logfile.log] [-b /abs/path/to/basedir]
-rwfus [-iureds | --install | --update | --remove | --enable | --disable | --status] [--test] [--logfile path/to/logfile.log] [--basedir /abs/path/to/basedir/.rwfus]
-```
+
+Run `rwfus --help` to see every option
 
 ### Pacman Setup, once complete:
 ```
