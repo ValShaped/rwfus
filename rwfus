@@ -27,7 +27,7 @@ source rwfus_include/config.sh
 # Project metadata
 Name="Rwfus"
 Description="Carry Pacman across SteamOS updates!"
-Version="0.2.1"
+Version="0.3.0"
 
 # Default directories
 Base_Directory="/home/.${Name@L}"       # Where all the files will go
