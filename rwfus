@@ -29,13 +29,13 @@ Name="Rwfus"
 Description="Carry Pacman across SteamOS updates!"
 Version="0.2.1"
 
-# Default destinations
-Base_Directory="/home/.${Name@L}"               # Where all the files will go
-Work_Directory="$Base_Directory/.work"        # Where the overlayfs work dirs will go
-Unit_Directory="$Base_Directory/.units"    # Where all the generated units will go
-Systemd_Directory="/etc/systemd/system"         # Where systemd expects units to be
+# Default directories
+Base_Directory="/home/.${Name@L}"       # Where all the files will go
+Work_Directory="$Base_Directory/.work"  # Where the overlayfs work dirs will go
+Unit_Directory="$Base_Directory/.units" # Where all the generated units will go
+Systemd_Directory="/etc/systemd/system" # Where systemd expects units to be
 
-# Default Directories list
+# Default Overlay list
 #   /usr : /usr/bin, /usr/lib; popular install locations. On path.
 #   /etc/pacman.d /var/lib/pacman /var/cache/pacman : store pacman state
 Directories="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
@@ -138,11 +138,10 @@ while true; do
             config --store "$caller_dir/${Name@L}.conf"
             echo "Wrote config to $caller_dir/${Name@L}.conf"
             exit 0
-            shift
             ;;
     # Get information
         -v|--version)
-            printf "$Name, version $Version\n$Description\n"
+            printf "$Name v$Version\n$Description\n"
             exit 0
         ;;
     # on-path installation
@@ -177,7 +176,7 @@ while true; do
 done
 
 # Register exit handler to print name of logfile on exit
-trap get_logfile_name EXIT
+
 
 # Log preamble
 Log --new
@@ -202,6 +201,7 @@ fi
 for operation in ${Operation:=$Default_Operation}; do
     case "$operation" in
         "perform_install"|"perform_update"|"perform_remove_all")
+            trap get_logfile_name EXIT
             Directories="${@:-$Directories}"
             $operation $Directories
         ;;
@@ -209,9 +209,11 @@ for operation in ${Operation:=$Default_Operation}; do
             $operation ${Unit_Directory} "STAT!"
         ;;
         "add_to_bin"|"remove_from_bin")
+            trap get_logfile_name EXIT
             $operation
         ;;
         *)
+            trap get_logfile_name EXIT
             Log -p echo "You've encountered easter egg #2, \"$operation\"! Contact a developer and let them know!"
             exit -1;
         ;;
