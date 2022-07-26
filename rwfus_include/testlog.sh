@@ -30,6 +30,10 @@ function check_permissions {
     }
 }
 
+function get_logfile_name {
+    printf "\nLogfile saved to $Logfile\n"
+}
+
 function Log {
     case "$1" in
     --new)
@@ -41,7 +45,6 @@ function Log {
         fi
         # make logfile owned by deck:deck
         #chown $(logname):$(id -gn $(logname 2>/dev/null)) $Logfile > /dev/null 2>&1
-        echo "Logging to $Logfile"
         return 0
         ;;
     -p)

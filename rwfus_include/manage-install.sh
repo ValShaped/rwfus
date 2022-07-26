@@ -118,6 +118,7 @@ function perform_remove_all {
     check_permissions
     Log -p echo "Uninstalling $Name"
 
+    config --load
     # disable units
     Log -p echo "1. Disabling units"
     disable_units "$Unit_Directory"
@@ -135,27 +136,27 @@ function perform_remove_all {
 
 function add_to_bin {
     check_permissions
-    Log -p echo "Adding $Name to PATH..."
-    Log -p echo "Warning: Disabling/Removing $Name will remove this from PATH"
-    local project_bin_dir="$Base_Directory/usr/local/bin"
-    Log mkdir -vp -- "$project_bin_dir"
+    local bin_dir="$Base_Directory/usr/local/bin"
+    Log -p echo "Adding $Name to $bin_dir..."
+    Log -p echo "Warning: Disabling/Removing $Name will remove this from PATH!"
+    Log mkdir -vp -- "$bin_dir"
     if [[ $? != 0 ]]; then
-        Log -p echo "$project_bin_dir is not writable. Is $Name installed?"
+        Log -p echo "$bin_dir is not writable. Is $Name installed?"
         exit -3
     fi
-    # Move include/ to the new dir
-    Log cp -vr ./rwfus_include "$project_bin_dir/"
-    # Move the main file to the new dir
-    Log cp -vr $0 "$project_bin_dir/"
+    # Move sources to the bin dir
+    Log cp -vr ./rwfus_include "$bin_dir/"
+    # Move the main script to the bin dir
+    Log cp -vr $0 "$bin_dir/"
     Log -p echo -e "Done!\n"
 }
 
 function remove_from_bin {
     check_permissions
-    local project_bin_dir="$Base_Directory/usr/local/bin"
-    Log -p echo "Removing $Name from $project_bin_dir"
-    Log rm -vr "$project_bin_dir/rwfus_include"
-    Log rm -v  "$project_bin_dir/$0"
+    local bin_dir="$Base_Directory/usr/local/bin"
+    Log -p echo "Removing $Name from $bin_dir"
+    Log rm -vr "$bin_dir/rwfus_include"
+    Log rm -v  "$bin_dir/$0"
     if [[ $? != 0 ]]; then return -1; fi
     Log -p echo -e "Done!\n"
 }

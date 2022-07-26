@@ -76,7 +76,7 @@ FLAGS:
 
     OPTIONS:
     -l, --logfile <path>    Specify the location of $Name's log file
-                                Default: ./$Logfile
+                                Default: $Logfile (random)
     -c, --config <path>     Specify a configuration file to use
                                 Default: $Base_Directory/
 
@@ -175,6 +175,9 @@ while true; do
             ;;
     esac
 done
+
+# Register exit handler to print name of logfile on exit
+trap get_logfile_name EXIT
 
 # Log preamble
 Log --new
