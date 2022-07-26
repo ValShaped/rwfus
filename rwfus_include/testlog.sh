@@ -40,7 +40,7 @@ function Log {
             return -1
         fi
         # make logfile owned by deck:deck
-        chown $(logname):$(id -gn $(logname 2>/dev/null)) $Logfile > /dev/null 2>&1
+        #chown $(logname):$(id -gn $(logname 2>/dev/null)) $Logfile > /dev/null 2>&1
         echo "Logging to $Logfile"
         return 0
         ;;
