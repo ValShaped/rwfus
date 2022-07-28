@@ -65,5 +65,6 @@ ARGS:
 ```
 sudo pacman-key --init
 sudo pacman-key --populate
-sudo pacman -Su
+sudo pacman -Sy
 ```
+Warning: Due to the way Valve's firmware updates work, doing `pacman -S[y[y]]u` at any time will lead to complications when the next firmware update is installed. I highly advise avoiding `-Su`, `-Syu`, and `-Syyu` altogether on a Steam Deck with read-only rootfs.
