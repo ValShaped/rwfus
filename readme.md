@@ -6,6 +6,14 @@ Generator for overlay mount systemd unit files
 
 By default, mounts /usr /etc/pacman.d /var/lib/pacman and /var/cache/pacman, so you can get pacman working properly
 
+### Compatibility warning
+
+The Steam Deck Recovery Image (and possibly newer factory installs) will reformat the home partition on your Deck to ext4 *with the `-O casefold` flag*, which enables case-folding support. Case-folding is *not supported* by the overlayfs kernel driver, and mounting will fail. 
+As of right now, there's no way around this issue without using a nightly build of tune2fs which is capable of disabling `casefold` on ext4. 
+In the coming days, I'll be updating Rwfus to check if casefold is enabled.
+
+Case folding was enabled on the filesystem level to speed up games which run through Proton. Windows uses case-insensitive paths by default, and user-mode case-folding is much slower than case-folding in the ext4 kernel driver itself. However, since overlayfs doesn't support it, I can't reasonably support it either.
+
 ### Installation:
 
 1. `git clone https://github.com/ValShaped/rwfus.git`
