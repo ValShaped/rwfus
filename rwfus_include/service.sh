@@ -39,7 +39,7 @@ After=$after
 
 [Service]
 Type=simple
-ExecStart=$script_path/${Name@L}-service.sh
+ExecStart=$script_path
 ExecStop=$
 
 [Install]
