@@ -68,11 +68,11 @@ load_config $Config
 for operation in ${Operation:="print_help"}; do
     case "$operation" in
         "mount_all")
-            sudo systemctl mask -- "pacman-cleanup.service"
+            systemctl mask -- "pacman-cleanup.service"
             mount_all
         ;;
         "unmount_all")
-            sudo systemctl unmask -- "pacman-cleanup.service"
+            systemctl unmask -- "pacman-cleanup.service"
             unmount_all
         ;;
         "print_help")
