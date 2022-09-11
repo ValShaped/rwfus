@@ -88,6 +88,8 @@ function delete_service {
 function stat_service {
     if [[ -d $Service_Directory ]]; then
         SYSTEMD_COLORS=1 Test systemctl status --lines 0 --no-pager -- `list_service`
+    else
+        echo "Rwfus is not installed. Install it with \`rwfus --install\`"
     fi
 }
 
