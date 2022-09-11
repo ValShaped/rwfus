@@ -91,6 +91,8 @@ ARGS:
 EOF
 }
 
+opts_to_log="$0 $@"
+
 # Parse options
 LONGOPTS="help,install,update,remove,enable,disable,status,test,version,install-bin,remove-bin,gen-config,gen-script,logfile:,config:"
 SHORTOPTS="hiuredstvgl:c:"
@@ -100,8 +102,6 @@ if [[ $? != 0 ]]; then
     exit -128;
 fi
 eval set -- "$PARSED"
-
-opts_to_log="$@"
 
 while true; do
     case "$1" in
@@ -202,6 +202,7 @@ fi
 
 function initialize_log {
     Log --new
+    Log echo $opts_to_log
     trap get_logfile_name EXIT
     Log echo "$0 $opts_to_log"
 }
@@ -211,9 +212,9 @@ for operation in ${Operation:=$Default_Operation}; do
         "perform_install"|"perform_update"|"perform_remove_all"|\
         "add_to_bin"|"remove_from_bin"|\
         "enable_service"|"disable_service")
+            check_permissions
             initialize_log
             Log config --load
-            check_permissions
             $operation $@
         ;;
         "stat_service")
