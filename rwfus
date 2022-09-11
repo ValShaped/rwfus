@@ -111,6 +111,7 @@ while true; do
             shift
         ;;
         -v|--version)
+            Operation+="version "
             shift
         ;;
     # Installation operations
