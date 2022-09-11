@@ -25,7 +25,7 @@ function Test {
 
 function check_permissions {
     [ "$EUID" -eq 0 ] || [[ $TESTMODE ]]  || {
-        Log -p echo "This command must be performed as $(id -un -- 0)"
+        echo "This command must be performed as $(id -un -- 0)"
         exit -2
     }
 }
