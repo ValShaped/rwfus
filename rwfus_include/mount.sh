@@ -24,7 +24,7 @@ function mount_all {
 function unmount_all {
     for target in $Directories; do
         # Try to mount. If failure, retry later
-        while ! umount "$target"; do
+        while ! umount -l "$target"; do
             echo "  $target not available (error $?). Retrying..."
             sleep 1
         done
