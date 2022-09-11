@@ -124,6 +124,9 @@ function perform_remove_all {
     Log -p echo "3. Removing $Name"
     Log rm -vr "$Base_Directory"
 
+    # inform user about rwfus config left behind
+    Log -p echo "Not removing $Config_File as it may contain important information."
+
     Log -p echo -e "Done!\n"
 }
 
