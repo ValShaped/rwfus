@@ -213,6 +213,7 @@ for operation in ${Operation:=$Default_Operation}; do
         "enable_service"|"disable_service")
             initialize_log
             Log config --load
+            check_permissions
             $operation $@
         ;;
         "stat_service")
