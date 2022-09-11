@@ -1,0 +1,21 @@
+# Rwfus v0.4.0-dev [Test Mode active]
+
+# Rwfus's directory
+Base_Directory ./test/opt/.rwfus
+
+# List of directories to overlay
+Directories /usr /etc/pacman.d /var/lib/pacman /var/cache/pacman
+
+# Overlay FS upper and work directories go in here
+Upper_Directory ./test/opt/.rwfus/upper
+Work_Directory  ./test/opt/.rwfus/work
+
+# Scripts and systemd units go in these directories
+Service_Name      
+Service_Directory ./test/opt/.rwfus/service
+
+# Directory that systemd loads units from
+Systemd_Directory ./test/etc/systemd/system
+
+# Directory to copy rwfus and rwfus_include into when performing install_bin
+Path_Install_Directory ./test/home/.steamos/offload/usr/local/bin

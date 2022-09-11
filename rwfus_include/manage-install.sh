@@ -1,5 +1,5 @@
 : <<LICENSE
-       manage-install.sh: Rwfus
+      manage-install.sh: Rwfus
     Copyright (C) 2022 ValShaped (val@soft.fish)
 
     This library is free software; you can redistribute it and/or
@@ -18,75 +18,70 @@
 LICENSE
 
 # Install
-source rwfus_include/units.sh
+source rwfus_include/service.sh
 source rwfus_include/testlog.sh
 
-function perform_install {
-    check_permissions
+function generate_dirs {
     local dir_list="$@"
-    Log -p echo "Creating overlays for $dir_list:"
+    Log mkdir -vp "$Base_Directory" "$Service_Directory"
+    for dir in $dir_list; do
+        local escaped_dir=`systemd-escape -p -- "$dir"`
+        Log mkdir -pv "${Upper_Directory}/${escaped_dir}" "${Work_Directory}/${escaped_dir}"
+    done
+}
+
+function perform_install {
+    Log -p echo "Creating overlays for $Directories:"
 
     # generate dirs
     Log -p echo "1. Generating directories"
-    Log mkdir -vp "$Base_Directory/.units"
-    for dir in $dir_list; do
-        local escaped_dir=`systemd-escape -p -- "$dir"`
-        Log mkdir -pv "${Base_Directory}/${escaped_dir}"
-        Log mkdir -pv "${Work_Directory}/${escaped_dir}"
-    done
+    Log generate_dirs $Directories
 
-    # generate new units
-    Log -p echo "2. Generating units"
-    local gen_args="$Unit_Directory"
-    for dir in $dir_list; do
-        local mount_file_name=`systemd-escape -p --suffix=mount -- "$dir"`
-        gen_args="$gen_args $mount_file_name"
-    done
-    Log -p generate_new_units $gen_args
-
-    # copy units to $Systemd_Directory
-    Log -p echo "3. Copying units to $Systemd_Directory"
-    Log cp -v "$Unit_Directory/*" "$Systemd_Directory"
-
-    # enable units
-    Log -p echo "4. Enabling units"
-    enable_units "$Unit_Directory"
+    # generate service
+    Log -p echo "2. Generating service"
+    Log generate_service
 
     # store config
-    Log -p echo "5. Storing configuration"
-    config --store
+    Log -p echo "3. Storing configuration"
+    Log config --store
+
+    # copy service unit to $Systemd_Directory
+    Log -p echo "4. Copying service to $Systemd_Directory"
+    Log cp -v "$Service_Directory"/*.service "$Systemd_Directory"
+
+    # enable service
+    Log -p echo "5. Enabling service unit"
+    enable_service
 
     Log -p echo -e "Done!\n"
-    stat_units
+    stat_service
 }
 
 function perform_update {
-    check_permissions
     # Ensure the files are generated using the same settings as before
-    config --load
-    local units=`ls -- $Unit_Directory`
+    local units=`ls -- "$Service_Directory"`
     Log -p echo "Updating [ $units ] to latest version"
 
     # disable units
-    Log -p echo "1. Disabling units"
-    disable_units "$Unit_Directory"
+    Log -p echo "1. Disabling service"
+    disable_service "$Service_Directory"
 
     # delete units
-    Log -p echo "2. Removing units"
-    delete_units "$Unit_Directory"
-    Log rm -v $Unit_Directory/*
+    Log -p echo "2. Removing service"
+    delete_service "$Service_Directory"
+    Log rm -v $Service_Directory/*
 
     # generate new units
-    Log -p echo "3. Generating units"
-    generate_new_units "$Unit_Directory" "$units"
+    Log -p echo "3. Generating service"
+    Log -p generate_service
 
     # copy new units to location
-    Log -p echo "4. Copying units to $Systemd_Directory"
-    Log cp -v "$Unit_Directory/*" "$Systemd_Directory"
+    Log -p echo "4. Copying service to $Systemd_Directory"
+    Log cp -v "$Service_Directory/*.service" "$Systemd_Directory"
 
     # enable units
-    Log -p echo "5. Enabling units"
-    enable_units "$Unit_Directory"
+    Log -p echo "5. Enabling service"
+    enable_service "$Service_Directory"
     Log -p echo -e "Done!\n"
 }
 
@@ -115,17 +110,15 @@ function perform_remove_all {
         echo "This will remove all software you've installed with pacman," "and revert your Deck to a pre-$Name state."
         confirm_remove_all "Are you absolutely sure you want to do this?"
     fi
-    check_permissions
     Log -p echo "Uninstalling $Name"
 
-    config --load
     # disable units
     Log -p echo "1. Disabling units"
-    disable_units "$Unit_Directory"
+    disable_service "$Service_Directory"
 
     # delete units
     Log -p echo "2. Removing units from $Systemd_Directory"
-    delete_units "$Unit_Directory" # Not a typo
+    delete_service "$Service_Directory" # Not a typo
 
     # delete $Base_Directory
     Log -p echo "3. Removing $Name"
@@ -135,15 +128,8 @@ function perform_remove_all {
 }
 
 function add_to_bin {
-    check_permissions
-    local bin_dir="$Base_Directory/usr/local/bin"
+    local bin_dir="$Path_Install_Directory"
     Log -p echo "Adding $Name to $bin_dir..."
-    Log -p echo "Warning: Disabling/Removing $Name will remove this from PATH!"
-    Log mkdir -vp -- "$bin_dir"
-    if [[ $? != 0 ]]; then
-        Log -p echo "$bin_dir is not writable. Is $Name installed?"
-        exit -3
-    fi
     # Move sources to the bin dir
     Log cp -vr ./rwfus_include "$bin_dir/"
     # Move the main script to the bin dir
@@ -152,8 +138,7 @@ function add_to_bin {
 }
 
 function remove_from_bin {
-    check_permissions
-    local bin_dir="$Base_Directory/usr/local/bin"
+    local bin_dir="$Path_Install_Directory"
     Log -p echo "Removing $Name from $bin_dir"
     Log rm -vr "$bin_dir/rwfus_include"
     Log rm -v  "$bin_dir/$0"

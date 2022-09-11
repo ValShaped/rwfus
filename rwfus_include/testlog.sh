@@ -17,7 +17,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 LICENSE
 
-: ${Logfile:=default.log}
+: ${logfile:=default.log}
 
 function Test {
     ${TESTMODE+echo test: } $@
@@ -31,29 +31,46 @@ function check_permissions {
 }
 
 function get_logfile_name {
-    printf "Logfile saved to $Logfile\n"
+    printf "Log saved to $logfile\n"
+}
+
+function init_log {
+    logfile=${2:-`mktemp $Log_File`}
+    truncate -s 0 -- "$logfile"
+    if [[ $? != 0 ]]; then
+        echo "Error: Cannot open logfile $logfile for writing."
+        logfile="/dev/null"
+        return -1
+        fi
+    Log cat <<EOF
+$Name v$Version ${TESTMODE+[Test Mode active]}
+$Description
+
+$Name directory: $Base_Directory
+Unit Storage directory: $Service_Directory
+Systemd directory: $Systemd_Directory
+
+EOF
+    return 0
 }
 
 function Log {
     case "$1" in
     --new)
-        truncate -s 0 -- "$Logfile"
-        if [[ $? != 0 ]]; then
-            echo "Error: Cannot open logfile $Logfile for writing."
-            Logfile="/dev/null"
-            return -1
-        fi
-        # make logfile owned by deck:deck
-        #chown $(logname):$(id -gn $(logname 2>/dev/null)) $Logfile > /dev/null 2>&1
-        return 0
+        init_log
         ;;
-    -p)
+    -s|--log-status)
         shift
-        $@ | tee -a $Logfile 2>&1
-        return ${PIPESTATUS[0]} # preserve status of the first command
+        $@ >> $logfile 2>&1
+        echo "$@: $?" >> $logfile 2>&1
+        ;;
+    -p|--preserve-status)
+        shift
+        $@ | tee -a $logfile 2>&1 # preserve the output of the command
+        return ${PIPESTATUS[0]}   # preserve the status of the command
         ;;
     *)
-        $@ >> $Logfile 2>&1
+        $@ >> $logfile 2>&1
         ;;
     esac
 }

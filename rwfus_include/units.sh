@@ -39,7 +39,7 @@ function generate_new_units {
         case $unit in
             *.mount)
                 local lower=`systemd-escape -up "${unit%%.mount}"`
-                local upper="$Base_Directory/${unit%%.mount}"
+                local upper="$Upper_Directory/${unit%%.mount}"
                 local  work="$Work_Directory/${unit%%.mount}"
                 generate_overlay_mount_unit "$lower" "$upper" "$work" "$target_name" > "$unit_dir/$unit"
             ;;
@@ -93,13 +93,15 @@ After=$after
 [Install]
 WantedBy=$wanted_by
 EOF
-    # Log to Logfile
+    # Log to logfile
     Log cat <<-EOF
 Generated Target:
   - WantedBy $1
   - After    $2
 EOF
 }
+
+
 
 #
 # Unit management
@@ -127,7 +129,7 @@ function enable_units {
     Log Test systemctl mask -- "pacman-cleanup.service"
     # Print command instead of enabling units, in test mode
     Log Test systemctl enable --now -- `ls -- $generated_units_location`
-    if [[ $? != 0 ]]; then echo "Error when enabling units. See "$Logfile" for information."; return -1; fi
+    if [[ $? != 0 ]]; then echo "Error when enabling units. See "$logfile" for information."; return -1; fi
     if [[ -v $2 ]]; then
         stat_units $generated_units_location
     fi
@@ -141,7 +143,7 @@ function disable_units {
     Log Test systemctl disable --now -- `ls -- $generated_units_location`
     # Unmask pacman-cleanup.service, which automatically deletes pacman keyring on reboot
     Log Test systemctl unmask -- "pacman-cleanup.service"
-    if [[ $? != 0 ]]; then echo "Error when disabling units. See "$Logfile" for information."; return 1; fi
+    if [[ $? != 0 ]]; then echo "Error when disabling units. See "$logfile" for information."; return 1; fi
     if [[ -v $2 ]]; then
         stat_units $generated_units_location
     fi
@@ -150,21 +152,19 @@ function disable_units {
 function stat_units {
     Log echo "stat_units $@"
     local generated_units_location="$1"
-    # Print command instead of enabling units, in test mode
-    SYSTEMD_COLORS=1 Test systemctl status --lines 0 --no-pager -- `ls -- $Base_Directory/.units` \
+    SYSTEMD_COLORS=1 Test systemctl status --lines 0 --no-pager -- `ls -- "$Service_Directory"` \
         | grep -E --color=never " - |Loaded|Active"
     echo "For more information run 'systemctl status [unit.name]'"
-    if [[ $? != 0 ]]; then echo "Error when disabling units. See "$Logfile" for information."; return -1; fi
+    if [[ $? != 0 ]]; then echo "Error when disabling units. See "$logfile" for information."; return -1; fi
 }
 
 function delete_units {
     check_permissions
     Log echo "delete_units $@"
     local generated_units_location="$1"; local out=0
-    # Print command instead of enabling units, in test mode
     for unit in `ls -- $generated_units_location`; do
         Log rm -v -- "$Systemd_Directory/$unit";
         out=$(( $out+$? ))
     done
-    if [[ $out != 0 ]]; then echo "Error when deleting units. See "$Logfile" for information."; return -1; fi
+    if [[ $out != 0 ]]; then echo "Error when deleting units. See "$logfile" for information."; return -1; fi
 }
