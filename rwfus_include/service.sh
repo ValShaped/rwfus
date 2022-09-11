@@ -74,6 +74,8 @@ function disable_service {
     if [[ $? != 0 ]]; then Log -p echo "Error when disabling service. See "$logfile" for information."; return 1; fi
     # Unmask pacman-cleanup.service, which automatically deletes pacman keyring on reboot
     Log Test systemctl unmask -- "pacman-cleanup.service"
+    # Ew systemd keeps having side effects, stopping steamos-offload
+    Log Test systemctl start -- "usr-local.mount"
 }
 
 function delete_service {
