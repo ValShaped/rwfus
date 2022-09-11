@@ -39,8 +39,8 @@ After=$after
 
 [Service]
 Type=simple
-ExecStart=$script_path
-ExecStop=$
+ExecStart=$script_path --enable
+ExecStop=$script_path --disable
 
 [Install]
 WantedBy=$wanted_by
