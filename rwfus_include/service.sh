@@ -38,7 +38,9 @@ Requires=$wanted_by
 After=$after
 
 [Service]
-Type=simple
+Type=oneshot
+RemainAfterExit=yes
+TimeoutSec=3
 ExecStart=$script_path --enable
 ExecStop=$script_path --disable
 
