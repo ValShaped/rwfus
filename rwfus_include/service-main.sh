@@ -11,16 +11,17 @@ FLAGS:
     -h, --help          Show this help text, then exit
     -v, --version       Show the version number, then exit
 
-    -e, --enable*       Activate $Name's overlay mounts
-    -d, --disable*      Deactivate $Name's overlay mounts
+    -e, --start*        Activate $Name's overlay mounts
+    -d, --stop*         Deactivate $Name's overlay mounts
+    -r, --reload*       Reload $Name's overlay mounts
 
     * flags marked with a star require root
 EOF
 }
 
 # parse args
-LONGOPTS="help,version,enable,disable"
-SHORTOPTS="hved"
+LONGOPTS="help,version,start,stop,reload"
+SHORTOPTS="hvedr"
 PARSED=`getopt --options "$SHORTOPTS" --longoptions "$LONGOPTS" --name $0 -- $@`
 if [[ $? != 0 ]]; then
     echo "Usage: $0 [-hved | --help | --option | --enable | --disable ]"
@@ -37,14 +38,16 @@ while true; do
             exit 0
         ;;
     # Enablement control operations
-        -e|--enable)
+        -e|--start)
             Operation="mount_all "
             shift
             ;;
-        -d|--disable)
+        -d|--stop)
             Operation="unmount_all "
             shift
             ;;
+        -r|--reload)
+            Operation="unmount_all mount_all"
     # Get information
         -v|--version)
             Operation="version "
@@ -72,8 +75,9 @@ for operation in ${Operation:="print_help"}; do
             mount_all
         ;;
         "unmount_all")
-            systemctl unmask -- "pacman-cleanup.service"
+            # Disable mounts before
             unmount_all
+            systemctl unmask -- "pacman-cleanup.service"
         ;;
         "print_help")
             print_help
@@ -83,7 +87,7 @@ for operation in ${Operation:="print_help"}; do
         ;;
         *)
             echo "Unknown operation: \"$operation\""
-            exit -1;
+            exit -2;
         ;;
     esac
 done

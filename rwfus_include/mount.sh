@@ -15,7 +15,7 @@ function mount_all {
         # Try to mount. If failure, retry later
         while ! mount -v -t overlay -o index=off,metacopy=off,lowerdir="$lower",upperdir="$upper",workdir="$work" overlay "$target"; do
             echo "  $target not available (error $?). Retrying..."
-            sleep 1
+            sleep 5
         done
         echo "Successfully overlaid $upper on $target"
     done
