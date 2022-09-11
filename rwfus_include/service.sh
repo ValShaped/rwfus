@@ -16,10 +16,10 @@ echo "$Description"
 
 EOF
     cat rwfus_include/info.sh         # Copy the project's info to the script
-    printf "\n# config\n"
-    declare -gp Config_File           # Copy the Config  path to the script, so it knows where to load from
+    printf "\n# config: Load only\n"
+    echo "Config_File=\"$Config_File\""   # Copy the Config  path to the script, so it knows where to load from
     declare -f load_config            # Copy the load_config function to the script
-    printf "\n# mount and unmount functions\n"
+    printf "\n# mount: and unmount\n"
     cat rwfus_include/mount.sh        # Copy the mount and unmount functions to the script
     printf "\n# service-main: argument parsing and function running\n"
     cat rwfus_include/service-main.sh # Parse args and run the correct function
