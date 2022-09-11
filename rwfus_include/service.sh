@@ -52,7 +52,8 @@ function generate_service {
     local script_path="$Service_Directory/$service_name.sh"
     local unit_path="$Service_Directory/$service_name.service"
     printf "Generating service $service_name\n  script $script_path\n  unit   $unit_path\n"
-    generate_service_script > $script_path
+    generate_service_script > $script_path && \
+        chmod +x $script_path
     generate_service_unit $script_path > $unit_path
 }
 
