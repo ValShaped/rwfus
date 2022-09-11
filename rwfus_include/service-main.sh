@@ -36,7 +36,7 @@ while true; do
         -h|--help)
             print_help
             exit 0
-        ;;
+            ;;
     # Enablement control operations
         -e|--start)
             Operation="mount_all "
@@ -48,11 +48,12 @@ while true; do
             ;;
         -r|--reload)
             Operation="unmount_all mount_all"
+            ;;
     # Get information
         -v|--version)
             Operation="version "
             exit 0
-        ;;
+            ;;
         --)
             shift
             break
