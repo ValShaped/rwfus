@@ -137,6 +137,8 @@ function add_to_bin {
     Log cp -vr ./rwfus_include "$bin_dir/"
     # Move the main script to the bin dir
     Log cp -vr $0 "$bin_dir/"
+    # Enable steamos-offload's usr-local.mount
+    Log Test systemctl enable --now -- "usr-local.mount"
     Log -p echo -e "Done!\n"
 }
 
