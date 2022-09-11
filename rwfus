@@ -18,6 +18,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 LICENSE
 caller_dir=${PWD}
+caller_cmd="$0 $@"
+
 cd $(dirname "$BASH_SOURCE[0]")
 source rwfus_include/info.sh           # Project information (name, etc.)
 source rwfus_include/testlog.sh        # Logging
@@ -90,8 +92,6 @@ ARGS:
                             Defaults: $Directories
 EOF
 }
-
-opts_to_log="$0 $@"
 
 # Parse options
 LONGOPTS="help,install,update,remove,enable,disable,status,test,version,install-bin,remove-bin,gen-config,gen-script,logfile:,config:"
@@ -203,9 +203,8 @@ fi
 
 function initialize_log {
     Log --new
-    Log echo $opts_to_log
+    Log echo $caller_cmd
     trap get_logfile_name EXIT
-    Log echo "$0 $opts_to_log"
 }
 
 for operation in ${Operation:=$Default_Operation}; do

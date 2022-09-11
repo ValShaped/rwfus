@@ -26,7 +26,8 @@ function Test {
 function check_permissions {
     [ "$EUID" -eq 0 ] || [[ $TESTMODE ]]  || {
         echo "This command must be performed as $(id -un -- 0)"
-        exit -2
+        cd "$caller_dir" && sudo $caller_cmd
+        exit $?
     }
 }
 
