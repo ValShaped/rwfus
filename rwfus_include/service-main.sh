@@ -62,7 +62,7 @@ while true; do
 done
 
 # load the config file
-load_config $Config
+load_config $Config_File
 
 # perform operations
 for operation in ${Operation:="print_help"}; do
