@@ -73,8 +73,8 @@ FLAGS:
     -d, --disable*      Deactivate $Name's overlay mounts
     -s, --status        Get the status of $Name's overlay mounts
 
-        --install-bin*  Put $0 into a [...]/usr/local/bin folder
-        --remove-bin*   Remove $Name from a [...]/usr/local/bin folder
+    -I, --install-bin*  Put $0 into a [...]/usr/local/bin folder
+    -R, --remove-bin*   Remove $Name from a [...]/usr/local/bin folder
 
     -t, --test          Use fake directory targets when performing operations
     -g, --gen-config    Generate a sample config file, which you can use to customize your install
@@ -95,7 +95,7 @@ EOF
 
 # Parse options
 LONGOPTS="help,install,update,remove,enable,disable,status,test,version,install-bin,remove-bin,gen-config,gen-script,logfile:,config:"
-SHORTOPTS="hiuredstvgl:c:"
+SHORTOPTS="hiuredstvIRgl:c:"
 PARSED=`getopt --options "$SHORTOPTS" --longoptions "$LONGOPTS" --name $0 -- $@`
 if [[ $? != 0 ]]; then
     echo "Usage: $0 [-hiuredstvg] [-l path/to/logfile] [-c path/to/config] [/dir1 /dir2 ...]"
@@ -156,11 +156,11 @@ while true; do
             exit 0
             ;;
     # on-path installation
-        --install-bin)
+        -I|--install-bin)
             Operation+="add_to_bin "
             shift
         ;;
-        --remove-bin)
+        -R|--remove-bin)
             Operation+="remove_from_bin "
             shift
         ;;
