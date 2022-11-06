@@ -75,14 +75,18 @@ FLAGS:
     -c, --config <path>     Specify a configuration file to use
                                 Default: $Base_Directory/
 
+        TODO:
+        --backup <path>     Backup $Name's disk image to <path>
+        --restore <path>    Restore $Name's disk image from <path>
+
 ARGS:
-    <DIRECTORY>...      List of directories to create overlays for
-                            Defaults: $Directories
+    <DIRECTORY>...          List of directories to create overlays for
+                                Defaults: $Directories
 EOF
 }
 
 # Parse options
-LONGOPTS="help,install,update,remove,enable,disable,status,test,version,install-bin,remove-bin,gen-config,gen-script,gen-disk,mount,umount,logfile:,config:"
+LONGOPTS="help,install,update,remove,enable,disable,status,mount,umount,test,version,install-bin,remove-bin,gen-config,gen-script,gen-disk,logfile:,config:"
 SHORTOPTS="hiuredstvIRgl:c:"
 PARSED=`getopt --options "$SHORTOPTS" --longoptions "$LONGOPTS" --name $0 -- $@`
 if [[ $? != 0 ]]; then
@@ -128,6 +132,15 @@ while true; do
             Operation+="stat_service "
             shift
             ;;
+    # Disk Image Control
+        --mount)
+            Operation+="mount_disk "
+            shift 1
+        ;;
+        --umount|--unmount)
+            Operation+="unmount_disk"
+            shift 1
+        ;;
     # Test mode
         -t|--test)
             enable_testmode
@@ -148,14 +161,6 @@ while true; do
             generate_disk_image "${Name@L}.img" $@
             exit 0
             ;;
-        --mount)
-            Operation+="mount_disk "
-            shift 1
-        ;;
-        --umount|--unmount)
-            Operation+="unmount_disk"
-            shift 1
-        ;;
     # on-path installation
         -I|--install-bin)
             Operation+="add_to_bin "
