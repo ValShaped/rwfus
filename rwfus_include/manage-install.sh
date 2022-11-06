@@ -51,7 +51,7 @@ function perform_install {
 
     # copy service unit to $Systemd_Directory
     Log -p echo "5. Linking service to $Systemd_Directory"
-    Log ln -sv "$Service_Directory"/*.service "$Systemd_Directory"
+    Log cp -v "$Service_Directory"/*.service "$Systemd_Directory"
 
     # enable service
     Log -p echo "6. Enabling service unit"
@@ -85,7 +85,7 @@ function perform_update {
 
     # copy new units to location
     Log -p echo "4. Copying service to $Systemd_Directory"
-    Log ln -sv "$Service_Directory/*.service" "$Systemd_Directory"
+    Log cp -v "$Service_Directory/*.service" "$Systemd_Directory"
 
     # enable units
     Log -p echo "5. Enabling service"
@@ -124,12 +124,8 @@ function perform_remove_all {
     Log -p echo "1. Disabling units"
     disable_service
 
-    # delete units
-    Log -p echo "2. Removing units from $Systemd_Directory"
-    delete_service
-
     # delete $Base_Directory
-    Log -p echo "3. Removing $Name"
+    Log -p echo "2. Removing $Name"
     Log rm -vr "$Base_Directory"
 
     # inform user about rwfus config left behind
