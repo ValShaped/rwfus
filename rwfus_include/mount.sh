@@ -21,7 +21,7 @@ function mount_all {
         done
         echo "Successfully overlaid $upper on $target"
     done
-    if [[ "$Directories" ~= '.*/usr.*' ]]; then
+    if [[ "$Directories" ~= .*"/usr".* ]]; then
         # Take the path install directory by force
         mount --bind $Path_Install_Directory /usr/local/bin
     fi
