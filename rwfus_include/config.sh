@@ -25,7 +25,7 @@ function load_defaults {
     Directories="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
 
     # Default directories (These can be changed in the config file. Run `rwfus --gen-config` to generate an example file.)
-    Base_Directory="/opt/.${Name@L}"            # Where all the files will go
+    Base_Directory="/opt/${Name@L}"            # Where all the files will go
 
     # Systemd-related things
     Service_Directory="$Base_Directory/service" # Where generated service will go
