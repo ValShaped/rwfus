@@ -139,6 +139,10 @@ function perform_remove_all {
 
 function add_to_bin {
     local bin_dir="$Path_Install_Directory"
+    if [ stat_service ]; then
+        local reenable=true
+        disable_service
+    fi
     Log -p echo "Adding $Name to $bin_dir..."
     # Move sources to the bin dir
     Log cp -vr ./rwfus_include "$bin_dir/"
@@ -146,14 +150,26 @@ function add_to_bin {
     Log cp -vr $0 "$bin_dir/"
     # Enable steamos-offload's usr-local.mount
     Log Test systemctl enable --now -- "usr-local.mount"
+    if [ $reenable ]; then
+        enable_service
+    fi
+
     Log -p echo -e "Done!\n"
 }
 
 function remove_from_bin {
     local bin_dir="$Path_Install_Directory"
+    local reenable
+    if [ stat_service ]; then
+        reenable=true
+        disable_service
+    fi
     Log -p echo "Removing $Name from $bin_dir"
     Log rm -vr "$bin_dir/rwfus_include"
     Log rm -v  "$bin_dir/$0"
     if [[ $? != 0 ]]; then return -1; fi
+    if [ $reenable ]; then
+        enable_service
+    fi
     Log -p echo -e "Done!\n"
 }

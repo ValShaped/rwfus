@@ -115,6 +115,7 @@ function stat_service {
         SYSTEMD_COLORS=1 Test systemctl status --lines 0 --no-pager -- `list_service`
     else
         echo "Rwfus is not installed. Install it with \`rwfus --install\`"
+        return -1
     fi
 }
 
