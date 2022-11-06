@@ -89,7 +89,7 @@ function save_config {
 # $Name's 'home' directory
 Base_Directory ${Base_Directory}
 # Where ${Name} is installed when running \`${Name@L} --install-bin\`
-Path_Install_Directory ${Path_Install_Directory}
+#Path_Install_Directory ${Path_Install_Directory}
 
 [Overlay]
 # List of directories to overlay
@@ -99,7 +99,6 @@ Directories ${Directories}
 # The image must be mounted with the 'loop' option
 # All other btrfs mount options are fair game though. Play around!
 Mount_Options    ${Mount_Options}
-
 #Disk_Image      ${Disk_Image}
 #Mount_Directory ${Mount_Directory}
 
@@ -107,7 +106,7 @@ Mount_Options    ${Mount_Options}
 # Scripts and systemd units go in this directory
 #Service_Directory ${Service_Directory}
 # Directory that systemd loads units from
-Systemd_Directory  ${Systemd_Directory}
+#Systemd_Directory  ${Systemd_Directory}
 
 EOF
     ls -l $config_file
