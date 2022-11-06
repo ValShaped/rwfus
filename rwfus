@@ -58,8 +58,8 @@ FLAGS:
     -d, --disable*      Deactivate $Name's overlay mounts
     -s, --status        Get the status of $Name's overlay mounts
 
-        --mount         Mount $Name's disk image
-        --umount        Unmount $Name's disk image
+        --mount*        Mount $Name's disk image
+        --umount*       Unmount $Name's disk image
 
     -I, --install-bin*  Put $0 into a [...]/usr/local/bin folder
     -R, --remove-bin*   Remove $Name from a [...]/usr/local/bin folder
