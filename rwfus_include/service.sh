@@ -36,8 +36,10 @@ echo "$Description"
 EOF
     cat rwfus_include/info.sh           # Copy the project's info to the script
     printf "\n# config: Load only\n"
-    echo "Config_File=\"$Config_File\"" # Copy the Config  path to the script, so it knows where to load from
+    echo "Config_File=\"$Config_File\"" # Copy the Config path to the script, so it knows where to load from
+    declare -f change_base
     declare -f load_config              # Copy the load_config function to the script
+
     printf "\n# mount: and unmount\n"
     declare -f mount_disk
     declare -f unmount_disk
