@@ -30,7 +30,7 @@ function unmount_disk {
 
 function update_disk_image {
     Log Test mount_disk
-    local dir_list="${@:-Directories}"
+    local dir_list="${@:-$Directories}"
     for dir in $dir_list; do
         local escaped_dir=`systemd-escape -p -- "$dir"`
         Log Test mkdir -pv -- "${Upper_Directory}/${escaped_dir}" "${Work_Directory}/${escaped_dir}"
