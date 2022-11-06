@@ -25,34 +25,36 @@ function load_defaults {
     Directories="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
 
     # Default directories (These can be changed in the config file. Run `rwfus --gen-config` to generate an example file.)
-    Base_Directory="/opt/${Name@L}"            # Where all the files will go
+    Base_Directory="/opt/${Name@L}" # Where all the files will go
+    Service_Directory=              # Where generated service will go
+    # Disk
+    Disk_Image=                     # Where the disk image will go
+    Mount_Directory=                # Where the disk image will be mounted
+    # Overlayfs
+    Upper_Directory=                # Where the overlayfs upper dirs will go
+    Work_Directory=                 # Where the overlayfs work dirs will go
+
+    # Derive all of the above paths
+    change_base
 
     # Systemd-related things
-    Service_Directory="$Base_Directory/service" # Where generated service will go
     Systemd_Directory="/etc/systemd/system"     # Where systemd expects units to be
 
     # Rwfus config is stored in a partitionless btrfs image
-    Disk_Image="$Base_Directory/${Name@L}.btrfs" # Where the disk image will go
-    Mount_Directory="$Base_Directory/mount"       # Where the disk image will be mounted
     Mount_Options="loop,compress"                 # Make sure you keep 'loop', so it creates a loop device
 
-    # Overlay filesystem requires upper, lower, and work directories. The lower is always the overlayed directory here.
-    Upper_Directory="$Mount_Directory/upper"      # Where the overlayfs upper dirs will go
-    Work_Directory="$Mount_Directory/work"        # Where the overlayfs work dirs will go
-
     # SteamOS Offload offloads /usr/local to /home/.steamos/offload/usr/local
-    # Beware! This will be considered read-only to overlayfs, and adding stuff while rwfus is enabled is not recommended.
+    # Beware! This will be considered read-only to overlayfs, so adding stuff while rwfus is enabled is not recommended.
     Path_Install_Directory="/home/.steamos/offload/usr/local/bin"
 }
 
-function rebase_directories {
-    local newbase="${1:-$Base_Directory}"
-    Base_Directory="$newbase"                    # Where all the files will go
-    Disk_Image="$Base_Directory/${Name@L}.btrfs" # Where the disk image will go
+function change_base {
+    # Service Directory
+    Service_Directory="$Base_Directory/service"   # Where generated service will go
+    Disk_Image="$Base_Directory/${Name@L}.btrfs"  # Where the disk image will go
     Mount_Directory="$Base_Directory/mount"       # Where the disk image will be mounted
     Upper_Directory="$Mount_Directory/upper"      # Where the overlayfs upper dirs will go
     Work_Directory="$Mount_Directory/work"        # Where the overlayfs work dirs will go
-    Service_Directory="$Base_Directory/service"  # Where generated service will go
 }
 
 function enable_testmode {
@@ -60,7 +62,10 @@ function enable_testmode {
 
     local testdir="${1:-./test}"
 
-    rebase_directories "$testdir${Base_Directory}"
+    # Use the change-of-base theorem
+    Base_Directory="$testdir${Base_Directory}"
+    change_base
+
     # Change Path_Install_Directory and Systemd_Directory
     Path_Install_Directory="$testdir$Path_Install_Directory"
     Systemd_Directory="$testdir$Systemd_Directory"
@@ -83,29 +88,26 @@ function save_config {
 [Base]
 # $Name's 'home' directory
 Base_Directory ${Base_Directory}
-# Where ${Name} is installed to when running ${Name@L} --install-bin
+# Where ${Name} is installed when running \`${Name@L} --install-bin\`
 Path_Install_Directory ${Path_Install_Directory}
 
 [Overlay]
 # List of directories to overlay
 Directories ${Directories}
-# Overlay FS upper and work directories go in here
-Upper_Directory ${Upper_Directory}
-Work_Directory  ${Work_Directory}
 
-[Disk] # since v0.4.0
-# $Name's data is stored in a partitionless Disk_Image mounted at Mount_Directory
-Disk_Image      ${Disk_Image}
-Mount_Directory ${Mount_Directory}
+[Disk]
 # The image must be mounted with the 'loop' option
 # All other btrfs mount options are fair game though. Play around!
-Mount_Options   ${Mount_Options}
+Mount_Options    ${Mount_Options}
+
+#Disk_Image      ${Disk_Image}
+#Mount_Directory ${Mount_Directory}
 
 [Systemd]
 # Scripts and systemd units go in this directory
-Service_Directory ${Service_Directory}
+#Service_Directory ${Service_Directory}
 # Directory that systemd loads units from
-Systemd_Directory ${Systemd_Directory}
+Systemd_Directory  ${Systemd_Directory}
 
 EOF
     ls -l $config_file
@@ -117,12 +119,18 @@ function load_config {
     if [[ ! -f $config_file ]]; then echo "$config_file not found"; return -1; fi
     if [[ $CONFIG_LOADED ]];    then echo "Config already loaded";  return -2; fi
     while read -r var val; do
-        # filter lines which start with (some whitespace and) a hash sign; those are comments.
+        # filter lines which start with (some whitespace and) a hash sign or square bracket; those are comments.
         # also filter lines which don't contain any non-space characters.
         local expression='^[[:space:]]*[^\[\#[:space:]]+'
         if [[ "$var" =~ $expression ]]; then
             printf "> $var: \"$val\"\n"
             declare -g $var="${val}"
+            if [[ "$var" =~ "Base_Directory" ]]; then
+                # Set the other directories relative to this one
+                # Since Base_Directory comes first in the config,
+                # other entries will overwrite these defaults
+                change_base
+            fi
         fi
     done < $config_file
     CONFIG_LOADED=1
