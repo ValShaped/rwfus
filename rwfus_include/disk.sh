@@ -21,11 +21,12 @@ source rwfus_include/testlog.sh
 
 function mount_disk {
     # Set mount options, if none are specified
-    sudo mount -vo "${Mount_Options:=loop}" -- "$Disk_Image" "$Mount_Directory"
+    mount -vo "${Mount_Options:=loop}" -- "$Disk_Image" "$Mount_Directory"
 }
 
 function unmount_disk {
-    sync && sudo umount -v -- "$Disk_Image"
+    sync
+    umount -v -- "$Disk_Image"
 }
 
 function update_disk_image {
