@@ -149,6 +149,7 @@ function add_to_bin {
     # Move the main script to the bin dir
     Log cp -vr $0 "$bin_dir/"
     # Enable steamos-offload's usr-local.mount
+    Log Test systemctl unmask -- "usr-local.mount"
     Log Test systemctl enable --now -- "usr-local.mount"
     if [ $reenable ]; then
         enable_service
@@ -171,5 +172,7 @@ function remove_from_bin {
     if [ $reenable ]; then
         enable_service
     fi
+    Log Test systemctl stop -- "usr-local.mount"
+    Log Test systemctl mask -- "usr-local.mount"
     Log -p echo -e "Done!\n"
 }
