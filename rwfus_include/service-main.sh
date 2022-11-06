@@ -91,12 +91,19 @@ load_config $Config_File
 for operation in ${Operation:="print_help"}; do
     case "$operation" in
         "mount_all")
+            # Mask pacman-cleanup.service, which automatically deletes pacman keyring on reboot
             systemctl mask -- "pacman-cleanup.service"
+            # Disable SteamOS-Offload's usr-local mounting
+            if [[ `systemctl show -p UnitFileState --value usr-local.mount` =~ enabled ]]; then
+                systemctl stop usr-local.mount
+            fi
             mount_all
         ;;
         "unmount_all")
-            # Disable mounts before
             unmount_all
+            if [[ `systemctl show -p UnitFileState --value usr-local.mount` =~ enabled ]]; then
+                systemctl start "usr-local.mount"
+             fi
             systemctl unmask -- "pacman-cleanup.service"
         ;;
         "print_help")

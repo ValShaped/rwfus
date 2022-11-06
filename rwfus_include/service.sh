@@ -86,8 +86,6 @@ function generate_service {
 }
 
 function enable_service {
-    # Mask pacman-cleanup.service, which automatically deletes pacman keyring on reboot
-    Log Test systemctl mask -- "pacman-cleanup.service"
     # Print command instead of enabling service, in test mode
     Log Test systemctl enable --now -- `list_service`
     if [[ $? != 0 ]]; then Log -p echo "Error when enabling service. See "$logfile" for information."; return -1; fi
