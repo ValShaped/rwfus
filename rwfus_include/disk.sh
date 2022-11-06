@@ -19,6 +19,15 @@ LICENSE
 
 source rwfus_include/testlog.sh
 
+function mount_disk {
+    # Set mount options, if none are specified
+    sudo mount -o "${Mount_Options:=loop}" "$Disk_Image" "$Mount_Directory"
+}
+
+function unmount_disk {
+    sync && sudo umount "$Disk_Image"
+}
+
 function update_disk_image {
     Log Test mount_disk
     local dir_list="${@:-Directories}"
