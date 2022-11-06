@@ -197,12 +197,16 @@ function initialize_log {
 for operation in ${Operation:=$Default_Operation}; do
     case "$operation" in
         "perform_install"|"perform_update"|"perform_remove_all"|\
-        "mount_disk"|"unmount_disk"|\
         "add_to_bin"|"remove_from_bin"|\
         "enable_service"|"disable_service")
             check_permissions
             initialize_log
             Log config --load
+            $operation $@
+        ;;
+        "mount_disk"|"unmount_disk")
+            check_permissions
+            config --load
             $operation $@
         ;;
         "stat_service")
@@ -217,6 +221,7 @@ for operation in ${Operation:=$Default_Operation}; do
         ;;
         *)
             trap get_logfile_name EXIT
+            initialize_log
             Log -p echo "You've encountered unreachable path #2, invalid operation \"$operation\"! Contact a developer and let them know!"
             exit -1
         ;;

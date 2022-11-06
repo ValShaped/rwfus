@@ -21,11 +21,11 @@ source rwfus_include/testlog.sh
 
 function mount_disk {
     # Set mount options, if none are specified
-    sudo mount -o "${Mount_Options:=loop}" "$Disk_Image" "$Mount_Directory"
+    sudo mount -vo "${Mount_Options:=loop}" -- "$Disk_Image" "$Mount_Directory"
 }
 
 function unmount_disk {
-    sync && sudo umount "$Disk_Image"
+    sync && sudo umount -v -- "$Disk_Image"
 }
 
 function update_disk_image {
@@ -33,7 +33,7 @@ function update_disk_image {
     local dir_list="${@:-Directories}"
     for dir in $dir_list; do
         local escaped_dir=`systemd-escape -p -- "$dir"`
-        Log Test mkdir -pv "${Upper_Directory}/${escaped_dir}" "${Work_Directory}/${escaped_dir}"
+        Log Test mkdir -pv -- "${Upper_Directory}/${escaped_dir}" "${Work_Directory}/${escaped_dir}"
     done
     Log Test unmount_disk
 }
@@ -44,7 +44,7 @@ function generate_disk_image {
     local label="${3:-$Name}"
     shift 4
     local directories="${@:-$Directories}"
-    truncate -s "$size" "$disk_path"
+    truncate -s "$size" -- "$disk_path"
     mkfs.btrfs -ML "$label" "$disk_path"
     update_disk_image "$directories"
 }

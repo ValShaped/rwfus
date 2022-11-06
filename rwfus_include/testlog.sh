@@ -52,6 +52,7 @@ Unit Storage directory: $Service_Directory
 Systemd directory: $Systemd_Directory
 
 EOF
+    chmod -q 644 -- "$logfile"
     return 0
 }
 
