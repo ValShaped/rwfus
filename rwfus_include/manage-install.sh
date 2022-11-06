@@ -19,14 +19,14 @@ LICENSE
 
 # Install
 source rwfus_include/service.sh
+source rwfus_include/disk.sh
 source rwfus_include/testlog.sh
 
-function generate_dirs {
+function generate_ovfs_dirs {
     local dir_list="$@"
-    Log mkdir -vp "$Base_Directory" "$Service_Directory"
     for dir in $dir_list; do
         local escaped_dir=`systemd-escape -p -- "$dir"`
-        Log mkdir -pv "${Upper_Directory}/${escaped_dir}" "${Work_Directory}/${escaped_dir}"
+        Log Test mkdir -pv "${Upper_Directory}/${escaped_dir}" "${Work_Directory}/${escaped_dir}"
     done
 }
 
@@ -35,22 +35,26 @@ function perform_install {
 
     # generate dirs
     Log -p echo "1. Generating directories"
-    Log generate_dirs $Directories
+    Log mkdir -vp "$Base_Directory" "$Service_Directory" "$Mount_Directory"
+
+    # generate disk
+    Log -p echo "2. Generating disk image"
+    Log generate_disk_image
 
     # generate service
-    Log -p echo "2. Generating service"
+    Log -p echo "3. Generating service"
     Log generate_service
 
     # store config
-    Log -p echo "3. Storing configuration"
+    Log -p echo "4. Storing configuration"
     Log config --store
 
     # copy service unit to $Systemd_Directory
-    Log -p echo "4. Copying service to $Systemd_Directory"
-    Log cp -v "$Service_Directory"/*.service "$Systemd_Directory"
+    Log -p echo "5. Linking service to $Systemd_Directory"
+    Log ln -sv "$Service_Directory"/*.service "$Systemd_Directory"
 
     # enable service
-    Log -p echo "5. Enabling service unit"
+    Log -p echo "6. Enabling service unit"
     enable_service
 
     Log -p echo -e "Done!\n"
@@ -75,9 +79,13 @@ function perform_update {
     Log -p echo "3. Generating service"
     Log -p generate_service
 
+    # update the disk image
+    Log -p echo "4. Generating new mount directories"
+    Log -p update_disk_image
+
     # copy new units to location
     Log -p echo "4. Copying service to $Systemd_Directory"
-    Log cp -v "$Service_Directory/*.service" "$Systemd_Directory"
+    Log ln -sv "$Service_Directory/*.service" "$Systemd_Directory"
 
     # enable units
     Log -p echo "5. Enabling service"
@@ -114,11 +122,11 @@ function perform_remove_all {
 
     # disable units
     Log -p echo "1. Disabling units"
-    disable_service "$Service_Directory"
+    disable_service
 
     # delete units
     Log -p echo "2. Removing units from $Systemd_Directory"
-    delete_service "$Service_Directory" # Not a typo
+    delete_service
 
     # delete $Base_Directory
     Log -p echo "3. Removing $Name"

@@ -23,32 +23,17 @@ caller_cmd="$0 $@"
 cd $(dirname "$BASH_SOURCE[0]")
 source rwfus_include/info.sh           # Project information (name, etc.)
 source rwfus_include/testlog.sh        # Logging
-source rwfus_include/service.sh        # Generate and manage (un-)mounting service and associated unit file
+source rwfus_include/service.sh        # Generate and manage service and associated unit file
+source rwfus_include/disk.sh           # Generate and manage disk images
 source rwfus_include/manage-install.sh # Installation management
 source rwfus_include/config.sh         # Configuration files
 
-# Default directories (These can be changed in the config file. Run `rwfus --gen-config` to generate an example file.)
-Base_Directory="/opt/.${Name@L}"            # Where all the files will go
-
-Upper_Directory="$Base_Directory/upper"     # Where the overlayfs upper dirs will go
-Work_Directory="$Base_Directory/work"       # Where the overlayfs work dirs will go
-
-Service_Directory="$Base_Directory/service" # Where generated service will go
-
-Systemd_Directory="/etc/systemd/system"     # Where systemd expects units to be
-
-# SteamOS Offload offloads /usr/local to /home/.steamos/offload/usr/local
-# Beware! This will be considered read-only to overlayfs, and adding stuff while rwfus is enabled is not recommended.
-Path_Install_Directory="/home/.steamos/offload/usr/local/bin"
+# Load the default configuration.
+load_defaults
 
 # Default paths
 Log_File="/tmp/${Name@L}.XXXX.log"
 Config_File="/etc/${Name@L}.conf"
-
-# Default Overlay list
-#   /usr : contains /usr/bin, /usr/lib; popular install locations. On path.
-#   /etc/pacman.d /var/lib/pacman /var/cache/pacman : store pacman state
-Directories="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
 
 # Default operation
 Default_Operation="stat_service "
@@ -73,6 +58,9 @@ FLAGS:
     -d, --disable*      Deactivate $Name's overlay mounts
     -s, --status        Get the status of $Name's overlay mounts
 
+        --mount         Mount $Name's disk image
+        --umount        Unmount $Name's disk image
+
     -I, --install-bin*  Put $0 into a [...]/usr/local/bin folder
     -R, --remove-bin*   Remove $Name from a [...]/usr/local/bin folder
 
@@ -94,7 +82,7 @@ EOF
 }
 
 # Parse options
-LONGOPTS="help,install,update,remove,enable,disable,status,test,version,install-bin,remove-bin,gen-config,gen-script,logfile:,config:"
+LONGOPTS="help,install,update,remove,enable,disable,status,test,version,install-bin,remove-bin,gen-config,gen-script,gen-disk,mount,umount,logfile:,config:"
 SHORTOPTS="hiuredstvIRgl:c:"
 PARSED=`getopt --options "$SHORTOPTS" --longoptions "$LONGOPTS" --name $0 -- $@`
 if [[ $? != 0 ]]; then
@@ -142,7 +130,7 @@ while true; do
             ;;
     # Test mode
         -t|--test)
-            TESTMODE=1
+            enable_testmode
             shift
             ;;
         -g|--gen-config)
@@ -155,6 +143,19 @@ while true; do
             echo "Wrote script to $caller_dir/${Name@L}-service.sh"
             exit 0
             ;;
+        --gen-disk)
+            shift 2
+            generate_disk_image "${Name@L}.img" $@
+            exit 0
+            ;;
+        --mount)
+            Operation+="mount_disk "
+            shift 1
+        ;;
+        --umount|--unmount)
+            Operation+="unmount_disk"
+            shift 1
+        ;;
     # on-path installation
         -I|--install-bin)
             Operation+="add_to_bin "
@@ -171,6 +172,7 @@ while true; do
             ;;
         -c|--config)
             Config_File="$2"
+            load_config $Config_File
             shift 2
             ;;
 
@@ -185,21 +187,6 @@ while true; do
     esac
 done
 
-# Set up TESTMODE
-if [[ $TESTMODE ]]; then
-    Base_Directory="./test${Base_Directory}"
-    Upper_Directory="./test$Upper_Directory"
-    Work_Directory="./test$Work_Directory"
-    Service_Directory="./test$Service_Directory"
-    Systemd_Directory="./test$Systemd_Directory"
-    Path_Install_Directory="./test$Path_Install_Directory"
-    Config_File="./test$Config_File"
-    Log_File="./test$Log_File"
-
-    mkdir -p "$Systemd_Directory"
-    mkdir -p "$Path_Install_Directory"
-    mkdir -p "./test/tmp"
-fi
 
 function initialize_log {
     Log --new
@@ -210,6 +197,7 @@ function initialize_log {
 for operation in ${Operation:=$Default_Operation}; do
     case "$operation" in
         "perform_install"|"perform_update"|"perform_remove_all"|\
+        "mount_disk"|"unmount_disk"|\
         "add_to_bin"|"remove_from_bin"|\
         "enable_service"|"disable_service")
             check_permissions
