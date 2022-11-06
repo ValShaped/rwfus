@@ -194,9 +194,12 @@ done
 
 
 function initialize_log {
-    Log --new
-    Log echo $caller_cmd
-    trap get_logfile_name EXIT
+    if [[ ! $LOG_INITIALIZED ]]; then
+        LOG_INITIALIZED=true
+        Log --new
+        Log echo $caller_cmd
+        trap get_logfile_name EXIT
+    fi
 }
 
 for operation in ${Operation:=$Default_Operation}; do
