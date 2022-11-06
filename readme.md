@@ -1,7 +1,7 @@
 ## Rwfus: Read-Write OverlayFS for your Steam Deck!
 ---
 
-
+Automatically mounts a bunch of stuff so you can get pacman working on your Deck
 By default, mounts /usr /etc/pacman.d /var/lib/pacman and /var/cache/pacman, so you can get pacman working properly
 
 ### Jank warning
@@ -12,7 +12,7 @@ The Steam Deck Recovery Image (and possibly newer factory installs) will reforma
 
 1. `git clone https://github.com/ValShaped/rwfus.git`
 2. `cd rwfus`
-3. `./rwfus`
+3. `./rwfus -iI`
 
 ### Usage:
 
