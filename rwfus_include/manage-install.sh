@@ -50,7 +50,7 @@ function perform_install {
     Log config --store
 
     # copy service unit to $Systemd_Directory
-    Log -p echo "5. Linking service to $Systemd_Directory"
+    Log -p echo "5. Copying service to $Systemd_Directory"
     Log cp -v "$Service_Directory"/*.service "$Systemd_Directory"
 
     # enable service
@@ -122,7 +122,10 @@ function perform_remove_all {
 
     # disable units
     Log -p echo "1. Disabling units"
-    disable_service
+    disable_service "$Service_Directory"
+
+    Log -p echo "2. Removing units"
+    delete_service "$Service_Directory"
 
     # delete $Base_Directory
     Log -p echo "2. Removing $Name"
