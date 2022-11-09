@@ -129,7 +129,7 @@ while true; do
             shift
             ;;
         -s|--status)
-            Operation+="stat_service "
+            Operation+="stat_service stat_disk "
             shift
             ;;
     # Disk Image Control
@@ -217,7 +217,7 @@ for operation in ${Operation:=$Default_Operation}; do
             config --load
             $operation $@
         ;;
-        "stat_service")
+        "stat_service"|"stat_disk")
             $operation
         ;;
         "print_help")

@@ -29,6 +29,13 @@ function unmount_disk {
     umount -v -- "$Disk_Image"
 }
 
+function stat_disk {
+    if [[ -e $Disk_Image ]]; then
+        echo ""
+        btrfs filesystem show -- "$Disk_Image"
+    fi
+}
+
 function update_disk_image {
     Log Test mount_disk
     local dir_list="${@:-$Directories}"
