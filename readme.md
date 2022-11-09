@@ -1,18 +1,27 @@
 ## Rwfus: Read-Write OverlayFS for your Steam Deck!
 ---
 
-Automatically mounts a bunch of stuff so you can get pacman working on your Deck
-By default, mounts /usr /etc/pacman.d /var/lib/pacman and /var/cache/pacman, so you can get pacman working properly
+Like a vinyl couch cover for your filesystem, Rwfus covers your Deck's /usr/ directory (and some others) allowing you to initialize and use pacman (the Arch Linux package manager) on the Steam Deck without losing packages when the next update comes out.
 
-### Jank warning
+Directories covered in a default installation:
+Directory         | Contents
+---               | ---
+/etc/pacman.d     | `pacman` configuration
+/usr              | Programs and libraries
+/var/cache/pacman | Package cache
+/var/lib/pacman   | Package metadata
 
-The Steam Deck Recovery Image (and possibly newer factory installs) will reformat the home partition on your Deck to ext4 *with the `-O casefold` flag*, which enables case-folding support. Overlayfs will always fail to mount on case-folding filesystems (because the dentry is "weird".) Because of this, Rwfus creates a sparse, partitionless disk image containing a btrfs volume, and stores overlay-related files in that. --mount and --umount options have been added to allow you to access the contents of this image while Rwfus is disabled.
 
 ### Installation:
 
 1. `git clone https://github.com/ValShaped/rwfus.git`
 2. `cd rwfus`
 3. `./rwfus -iI`
+
+
+### Jank warning
+
+Due to the way Valve's firmware updates work, doing `pacman -S[y[y]]u` at any time will lead to complications when the next firmware update is installed. I highly advise avoiding `-Su`, `-Syu`, and `-Syyu` altogether on a Steam Deck with read-only rootfs. It may lead to bad behavior.
 
 ### Usage:
 
@@ -71,11 +80,3 @@ ARGS:
 > `rwfus --install-bin`: Install Rwfus into the overlaid /usr/local/bin folder, so you can configure Rwfus from anywhere!
 
 > `rwfus --install --install-bin` will do the above, with a fresh install, in a single command!
-
-### Pacman Setup, once complete:
-```
-sudo pacman-key --init
-sudo pacman-key --populate
-sudo pacman -Sy
-```
-Warning: Due to the way Valve's firmware updates work, doing `pacman -S[y[y]]u` at any time will lead to complications when the next firmware update is installed. I highly advise avoiding `-Su`, `-Syu`, and `-Syyu` altogether on a Steam Deck with read-only rootfs.
