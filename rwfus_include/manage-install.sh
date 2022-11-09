@@ -30,6 +30,13 @@ function generate_ovfs_dirs {
     done
 }
 
+function setup_pacman {
+    Log Test pacman-key --init && \
+    Log Test pacman-key --populate && \
+    Log Test pacman -Sy || \
+    Log -p echo "Failed to set up pacman. See log for details."
+}
+
 function perform_install {
     Log -p echo "Creating overlays for $Directories:"
 
@@ -57,7 +64,12 @@ function perform_install {
     Log -p echo "6. Enabling service unit"
     enable_service
 
-    Log -p echo -e "Done!\n"
+    if [[ $? -eq 0 ]]; then
+        Log -p echo "7. Setting up pacman"
+        setup_pacman
+        Log -p echo -e "Done!\n"
+    fi
+
     stat_service
 }
 
