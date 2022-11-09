@@ -18,6 +18,7 @@ Directory         | Contents
 2. `cd rwfus`
 3. `./rwfus -iI`
 
+Then you're all set! Remember to periodically run `pacman -Sy` to update your repos
 
 ### Jank warning
 
