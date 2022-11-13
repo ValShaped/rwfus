@@ -103,7 +103,7 @@ for operation in ${Operation:="print_help"}; do
             unmount_all
             if [[ `systemctl show -p UnitFileState --value usr-local.mount` =~ enabled ]]; then
                 systemctl start "usr-local.mount"
-             fi
+            fi
             systemctl unmask -- "pacman-cleanup.service"
         ;;
         "print_help")
