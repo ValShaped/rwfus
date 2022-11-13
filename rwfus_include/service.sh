@@ -111,6 +111,10 @@ function delete_service {
     done
 }
 
+function service_state {
+    systemctl show -p ActiveState --value -- `list_service`
+}
+
 function stat_service {
     if [[ -d $Service_Directory ]]; then
         SYSTEMD_COLORS=1 Test systemctl status --lines 0 --no-pager -- `list_service`

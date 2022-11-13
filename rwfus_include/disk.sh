@@ -36,6 +36,30 @@ function stat_disk {
     fi
 }
 
+function backup_disk {
+    # Rationale: btrfs snapshots are not a backup. We do things properly, and copy the $Disk_Image
+    if [[ -f "$1" ]]; then
+    echo "Copying $Disk_Image to $1"
+    cp "$Disk_Image" "$1"
+    else
+        echo "Not found: $1"
+    fi
+    return
+}
+
+function restore_disk {
+    # Do the bare minimum, and check if $1 is actually a disk image
+    echo "Checking disk image $1:"
+    if btrfs filesystem show -- "$1"; then
+    echo "Copying $1 to $Disk_Image"
+    cp "$1" "$Disk_Image"
+    fi
+    echo "Disk image $Disk_Image:"
+    stat_disk
+    mount_disk
+    return
+}
+
 function update_disk_image {
     Log Test mount_disk
     local dir_list="${@:-$Directories}"

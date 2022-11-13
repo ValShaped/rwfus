@@ -19,6 +19,10 @@ LICENSE
 
 # This function loads the default config. Run `rwfus --gen-config` to generate an example file.
 function load_defaults {
+    # Default paths
+    Log_File="/tmp/${Name@L}.XXXX.log"
+    Config_File="/etc/opt/${Name@L}.conf"
+
     # Default Overlay list
     #   /usr : contains /usr/bin, /usr/lib; popular install locations. On path.
     #   /etc/pacman.d /var/lib/pacman /var/cache/pacman : store pacman state

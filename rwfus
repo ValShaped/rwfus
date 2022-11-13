@@ -31,10 +31,6 @@ source rwfus_include/config.sh         # Configuration files
 # Load the default configuration.
 load_defaults
 
-# Default paths
-Log_File="/tmp/${Name@L}.XXXX.log"
-Config_File="/etc/${Name@L}.conf"
-
 # Default operation
 Default_Operation="stat_service "
 
@@ -86,7 +82,7 @@ EOF
 }
 
 # Parse options
-LONGOPTS="help,install,update,remove,enable,disable,status,mount,umount,test,version,install-bin,remove-bin,gen-config,gen-script,gen-disk,logfile:,config:"
+LONGOPTS="help,install,update,remove,enable,disable,status,mount,umount,backup:,restore:,test,version,install-bin,remove-bin,gen-config,gen-script,gen-disk,logfile:,config:"
 SHORTOPTS="hiuredstvIRgl:c:"
 PARSED=`getopt --options "$SHORTOPTS" --longoptions "$LONGOPTS" --name $0 -- $@`
 if [[ $? != 0 ]]; then
@@ -135,30 +131,45 @@ while true; do
     # Disk Image Control
         --mount)
             Operation+="mount_disk "
-            shift 1
+            shift
         ;;
         --umount|--unmount)
-            Operation+="unmount_disk"
-            shift 1
+            Operation+="unmount_disk "
+            shift
+        ;;
+        --backup)
+            Operation+="backup_disk "
+            disk_path="$2"
+            shift 2
+        ;;
+        --restore)
+            Operation+="restore_disk "
+            disk_path="$2"
+            shift 2
         ;;
     # Test mode
         -t|--test)
             enable_testmode
             shift
             ;;
+    # Sample generators
         -g|--gen-config)
-            config --store "$caller_dir/${Name@L}.conf"
-            echo "Wrote config to $caller_dir/${Name@L}.conf"
+            sample_fullpath="$caller_dir/${Name@L}.conf"
+            config --store "$sample_fullpath"
+            echo "Wrote config to $sample_fullpath"
             exit 0
             ;;
         --gen-script)
-            generate_service_script > "$caller_dir/${Name@L}-service.sh"
-            echo "Wrote script to $caller_dir/${Name@L}-service.sh"
+            sample_fullpath="$caller_dir/${Name@L}d.sh"
+            generate_service_script > "$sample_fullpath"
+            echo "Wrote script to $sample_fullpath"
             exit 0
             ;;
         --gen-disk)
             shift 2
-            generate_disk_image "${Name@L}.img" $@
+            sample_fullpath="$caller_dir/${Name@L}.btrfs"
+            generate_disk_image "$sample_fullpath" $@
+            echo "Wrote disk image to $sample_fullpath"
             exit 0
             ;;
     # on-path installation
@@ -212,10 +223,16 @@ for operation in ${Operation:=$Default_Operation}; do
             Log config --load
             $operation $@
         ;;
-        "mount_disk"|"unmount_disk")
+        "mount_disk"|"unmount_disk"|"backup_disk"|"restore_disk")
             check_permissions
             config --load
-            $operation $@
+            if [[ service_state =~ "enabled" ]]; then
+                disable_service
+            $operation $disk_path
+                enable_service
+            else
+                $operation $disk_path
+            fi
         ;;
         "stat_service"|"stat_disk")
             $operation
