@@ -20,10 +20,6 @@ LICENSE
 source rwfus_include/testlog.sh
 source rwfus_include/disk.sh
 
-function check_casefold {
-    sudo dumpe2fs `findmnt -oSOURCE -DvenufT $1` 2>&1 | head -n 10 | grep -q casefold
-}
-
 function generate_service_script {
     # Add config-parsing to the bootstrapper script
     cat <<EOF
@@ -41,9 +37,12 @@ EOF
     declare -f load_config              # Copy the load_config function to the script
 
     printf "\n# mount: and unmount\n"
+    # Copy the disk image m*/um* functions
     declare -f mount_disk
     declare -f unmount_disk
-    cat rwfus_include/mount.sh          # Copy the mount and unmount functions to the script
+    # Copy the overlay m*/um* functions
+    declare -f mount_all
+    declare -f unmount_all
 
     printf "\n# service-main: argument parsing and function running\n"
     cat rwfus_include/service-main.sh   # Copy arg parser and script body
