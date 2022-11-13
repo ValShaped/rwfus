@@ -71,9 +71,10 @@ FLAGS:
     -c, --config <path>     Specify a configuration file to use
                                 Default: $Base_Directory/
 
-        TODO:
-        --backup <path>     Backup $Name's disk image to <path>
-        --restore <path>    Restore $Name's disk image from <path>
+        --backup <dest>*    Backup $Name's disk image to (file path) <dest>
+        --restore <src>*    Restore $Name's disk image from (file path) <src>
+
+    * options marked with a star require root, unless the --test flag is set.
 
 ARGS:
     <DIRECTORY>...          List of directories to create overlays for
