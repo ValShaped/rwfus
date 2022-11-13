@@ -18,33 +18,21 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 LICENSE
 caller_dir=${PWD}
+caller_cmd="$0 $@"
+
 cd $(dirname "$BASH_SOURCE[0]")
-source rwfus_include/testlog.sh
-source rwfus_include/units.sh
-source rwfus_include/manage-install.sh
-source rwfus_include/config.sh
+source rwfus_include/info.sh           # Project information (name, etc.)
+source rwfus_include/testlog.sh        # Logging
+source rwfus_include/service.sh        # Generate and manage service and associated unit file
+source rwfus_include/disk.sh           # Generate and manage disk images
+source rwfus_include/manage-install.sh # Installation management
+source rwfus_include/config.sh         # Configuration files
 
-# Project metadata
-Name="Rwfus"
-Description="Carry Pacman across SteamOS updates!"
-Version="0.3.0"
-
-# Default directories
-Base_Directory="/home/.${Name@L}"       # Where all the files will go
-Work_Directory="$Base_Directory/.work"  # Where the overlayfs work dirs will go
-Unit_Directory="$Base_Directory/.units" # Where all the generated units will go
-Systemd_Directory="/etc/systemd/system" # Where systemd expects units to be
-
-# Default Overlay list
-#   /usr : /usr/bin, /usr/lib; popular install locations. On path.
-#   /etc/pacman.d /var/lib/pacman /var/cache/pacman : store pacman state
-Directories="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
-
-# Default logfile path
-Logfile=`mktemp /tmp/${Name@L}.XXXX.log`
+# Load the default configuration.
+load_defaults
 
 # Default operation
-Default_Operation="perform_install"
+Default_Operation="stat_service "
 
 function print_help {
     cat <<EOF
@@ -59,15 +47,18 @@ FLAGS:
     -v, --version       Show the version number, then exit
 
     -i, --install*      Install $Name
-    -u, --update*       Re-generate systemd mount files, without touching data
+    -u, --update*       Re-generate systemd service files, without touching data
     -r, --remove*       Remove ALL FILES AND DIRECTORIES associated with $Name
 
-    -e, --enable*       Activate $Name's overlay mounts
-    -d, --disable*      Deactivate $Name's overlay mounts
-    -s, --status        Get the status of $Name's overlay mounts
+    -e, --enable*       Activate overlays
+    -d, --disable*      Deactivate overlays
+    -s, --status        Get the status of the overlay-mounter and disk image
 
-        --install-bin*  Put $0 into the overlayed /usr/local/bin folder
-        --remove-bin*   Remove $Name from the overlayed /usr/local/bin folder
+        --mount*        Mount $Name's disk image
+        --umount*       Unmount $Name's disk image
+
+    -I, --install-bin*  Put $0 into a [...]/usr/local/bin folder
+    -R, --remove-bin*   Remove $Name from a [...]/usr/local/bin folder
 
     -t, --test          Use fake directory targets when performing operations
     -g, --gen-config    Generate a sample config file, which you can use to customize your install
@@ -76,19 +67,23 @@ FLAGS:
 
     OPTIONS:
     -l, --logfile <path>    Specify the location of $Name's log file
-                                Default: $Logfile (random)
+                                Default: $Log_File (where X is random)
     -c, --config <path>     Specify a configuration file to use
                                 Default: $Base_Directory/
+        --backup <dest>*    Backup $Name's disk image to (file path) <dest>
+        --restore <src>*    Restore $Name's disk image from (file path) <src>
+
+    * options marked with a star require root, unless the --test flag is set.
 
 ARGS:
-    <DIRECTORY>...      List of directories to create overlays for
-                            Defaults: $Directories
+    <DIRECTORY>...          List of directories to create overlays for
+                                Defaults: $Directories
 EOF
 }
 
 # Parse options
-LONGOPTS="help,install,update,remove,enable,disable,status,test,version,install-bin,remove-bin,gen-config,logfile:,config:"
-SHORTOPTS="hiuredstvgl:c:"
+LONGOPTS="help,install,update,remove,enable,disable,status,mount,umount,backup:,restore:,test,version,install-bin,remove-bin,gen-config,gen-script,gen-disk,logfile:,config:"
+SHORTOPTS="hiuredstvIRgl:c:"
 PARSED=`getopt --options "$SHORTOPTS" --longoptions "$LONGOPTS" --name $0 -- $@`
 if [[ $? != 0 ]]; then
     echo "Usage: $0 [-hiuredstvg] [-l path/to/logfile] [-c path/to/config] [/dir1 /dir2 ...]"
@@ -98,10 +93,14 @@ eval set -- "$PARSED"
 
 while true; do
     case "$1" in
-    # Help
+    # Get information
         -h|--help)
-            print_help
-            exit 0
+            Operation+="print_help "
+            shift
+        ;;
+        -v|--version)
+            Operation+="version "
+            shift
         ;;
     # Installation operations
         -i|--install)
@@ -118,49 +117,78 @@ while true; do
             ;;
     # Enablement control operations
         -e|--enable)
-            Operation+="enable_units "
+            Operation+="enable_service stat_service "
             shift
             ;;
         -d|--disable)
-            Operation+="disable_units "
+            Operation+="disable_service stat_service "
             shift
             ;;
         -s|--status)
-            Operation+="stat_units "
+            Operation+="stat_service stat_disk "
             shift
             ;;
+    # Disk Image Control
+        --mount)
+            Operation+="mount_disk "
+            shift
+        ;;
+        --umount|--unmount)
+            Operation+="unmount_disk "
+            shift
+        ;;
+        --backup)
+            Operation+="backup_disk "
+            disk_path="$2"
+            shift 2
+        ;;
+        --restore)
+            Operation+="restore_disk "
+            disk_path="$2"
+            shift 2
+        ;;
     # Test mode
         -t|--test)
-            TESTMODE=1
+            enable_testmode
             shift
             ;;
+    # Sample generators
         -g|--gen-config)
-            config --store "$caller_dir/${Name@L}.conf"
-            echo "Wrote config to $caller_dir/${Name@L}.conf"
+            sample_fullpath="$caller_dir/${Name@L}.conf"
+            config --store "$sample_fullpath"
+            echo "Wrote config to $sample_fullpath"
             exit 0
             ;;
-    # Get information
-        -v|--version)
-            printf "$Name v$Version\n$Description\n"
+        --gen-script)
+            sample_fullpath="$caller_dir/${Name@L}d.sh"
+            generate_service_script > "$sample_fullpath"
+            echo "Wrote script to $sample_fullpath"
             exit 0
-        ;;
+            ;;
+        --gen-disk)
+            shift 2
+            sample_fullpath="$caller_dir/${Name@L}.btrfs"
+            generate_disk_image "$sample_fullpath" $@
+            echo "Wrote disk image to $sample_fullpath"
+            exit 0
+            ;;
     # on-path installation
-        --install-bin)
+        -I|--install-bin)
             Operation+="add_to_bin "
             shift
         ;;
-        --remove-bin)
+        -R|--remove-bin)
             Operation+="remove_from_bin "
             shift
         ;;
     # Options
         -l|--logfile)
-            rm "$Logfile"
-            Logfile="$2"
+            Log_File="$2"
             shift 2
             ;;
         -c|--config)
-            config --load "$2"
+            Config_File="$2"
+            load_config $Config_File
             shift 2
             ;;
 
@@ -169,53 +197,58 @@ while true; do
             break
             ;;
         *)
-            echo "If you just ran $Project_Name, and saw this, you've encountered easter egg #1! Please tell a developer right away."
+            echo "You've encountered unreachable path #1, invalid arg \"$1\"! Please tell a developer right away."
             exit -1
             ;;
     esac
 done
 
-# Register exit handler to print name of logfile on exit
 
-
-# Log preamble
-Log --new
-Log cat <<EOF
-$Name v$Version ${TESTMODE+[Test Mode active]}
-$Description
-
-$Name directory: $Base_Directory
-Unit Storage directory: $Unit_Directory
-Systemd directory: $Systemd_Directory
-
-EOF
-
-if [[ $TESTMODE ]]; then
-    Base_Directory="${caller_dir}/test${Base_Directory}"
-    Work_Directory="$Base_Directory/.work"
-    Unit_Directory="$Base_Directory/.units"
-    Systemd_Directory="${caller_dir}/test$Systemd_Directory"
-    mkdir -p "$Systemd_Directory"
-fi
+function initialize_log {
+    if [[ ! $LOG_INITIALIZED ]]; then
+        LOG_INITIALIZED=true
+        Log --new
+        Log echo $caller_cmd
+        trap get_logfile_name EXIT
+    fi
+}
 
 for operation in ${Operation:=$Default_Operation}; do
     case "$operation" in
-        "perform_install"|"perform_update"|"perform_remove_all")
-            trap get_logfile_name EXIT
-            Directories="${@:-$Directories}"
-            $operation $Directories
+        "perform_install"|"perform_update"|"perform_remove_all"|\
+        "add_to_bin"|"remove_from_bin"|\
+        "enable_service"|"disable_service")
+            check_permissions
+            initialize_log
+            Log config --load
+            $operation $@
         ;;
-        "enable_units"|"disable_units"|"stat_units")
-            $operation ${Unit_Directory} "STAT!"
+        "mount_disk"|"unmount_disk"|"backup_disk"|"restore_disk")
+            check_permissions
+            config --load
+            if [[ service_state =~ "enabled" ]]; then
+                disable_service
+                $operation $disk_path
+                enable_service
+            else
+                $operation $disk_path
+            fi
         ;;
-        "add_to_bin"|"remove_from_bin")
-            trap get_logfile_name EXIT
+        "stat_service"|"stat_disk")
             $operation
+        ;;
+        "print_help")
+            $operation
+            exit 0
+        ;;
+        "version")
+            printf "$Name v$Version\n$Description\n"
         ;;
         *)
             trap get_logfile_name EXIT
-            Log -p echo "You've encountered easter egg #2, \"$operation\"! Contact a developer and let them know!"
-            exit -1;
+            initialize_log
+            Log -p echo "You've encountered unreachable path #2, invalid operation \"$operation\"! Contact a developer and let them know!"
+            exit -1
         ;;
     esac
 done

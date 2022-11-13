@@ -1,5 +1,5 @@
 : <<LICENSE
-       manage-install.sh: Rwfus
+      manage-install.sh: Rwfus
     Copyright (C) 2022 ValShaped (val@soft.fish)
 
     This library is free software; you can redistribute it and/or
@@ -18,75 +18,90 @@
 LICENSE
 
 # Install
-source rwfus_include/units.sh
+source rwfus_include/service.sh
+source rwfus_include/disk.sh
 source rwfus_include/testlog.sh
 
-function perform_install {
-    check_permissions
+function generate_ovfs_dirs {
     local dir_list="$@"
-    Log -p echo "Creating overlays for $dir_list:"
+    for dir in $dir_list; do
+        local escaped_dir=`systemd-escape -p -- "$dir"`
+        Log Test mkdir -pv "${Upper_Directory}/${escaped_dir}" "${Work_Directory}/${escaped_dir}"
+    done
+}
+
+function setup_pacman {
+    Log Test pacman-key --init && \
+    Log Test pacman-key --populate && \
+    Log Test pacman -Sy || \
+    Log -p echo "Failed to set up pacman. See $Log_File for details."
+}
+
+function perform_install {
+    Log -p echo "Creating overlays for $Directories:"
 
     # generate dirs
     Log -p echo "1. Generating directories"
-    Log mkdir -vp "$Base_Directory/.units"
-    for dir in $dir_list; do
-        local escaped_dir=`systemd-escape -p -- "$dir"`
-        Log mkdir -pv "${Base_Directory}/${escaped_dir}"
-        Log mkdir -pv "${Work_Directory}/${escaped_dir}"
-    done
+    Log mkdir -vp "$Base_Directory" "$Service_Directory" "$Mount_Directory"
 
-    # generate new units
-    Log -p echo "2. Generating units"
-    local gen_args="$Unit_Directory"
-    for dir in $dir_list; do
-        local mount_file_name=`systemd-escape -p --suffix=mount -- "$dir"`
-        gen_args="$gen_args $mount_file_name"
-    done
-    Log -p generate_new_units $gen_args
+    # generate disk
+    Log -p echo "2. Generating disk image"
+    Log generate_disk_image
 
-    # copy units to $Systemd_Directory
-    Log -p echo "3. Copying units to $Systemd_Directory"
-    Log cp -v "$Unit_Directory/*" "$Systemd_Directory"
-
-    # enable units
-    Log -p echo "4. Enabling units"
-    enable_units "$Unit_Directory"
+    # generate service
+    Log -p echo "3. Generating service"
+    Log generate_service
 
     # store config
-    Log -p echo "5. Storing configuration"
-    config --store
+    Log -p echo "4. Storing configuration"
+    Log config --store
 
-    Log -p echo -e "Done!\n"
-    stat_units
+    # copy service unit to $Systemd_Directory
+    Log -p echo "5. Copying service to $Systemd_Directory"
+    Log cp -v "$Service_Directory"/*.service "$Systemd_Directory"
+
+    # enable service
+    Log -p echo "6. Enabling service unit"
+    enable_service
+
+    if [[ $? -eq 0 ]]; then
+        Log -p echo "7. Setting up pacman"
+        setup_pacman
+        Log -p echo -e "Done!\n"
+    fi
+
+    stat_service
 }
 
 function perform_update {
-    check_permissions
     # Ensure the files are generated using the same settings as before
-    config --load
-    local units=`ls -- $Unit_Directory`
+    local units=`ls -- "$Service_Directory"`
     Log -p echo "Updating [ $units ] to latest version"
 
     # disable units
-    Log -p echo "1. Disabling units"
-    disable_units "$Unit_Directory"
+    Log -p echo "1. Disabling service"
+    disable_service "$Service_Directory"
 
     # delete units
-    Log -p echo "2. Removing units"
-    delete_units "$Unit_Directory"
-    Log rm -v $Unit_Directory/*
+    Log -p echo "2. Removing service"
+    delete_service "$Service_Directory"
+    Log rm -v $Service_Directory/*
 
     # generate new units
-    Log -p echo "3. Generating units"
-    generate_new_units "$Unit_Directory" "$units"
+    Log -p echo "3. Generating service"
+    Log -p generate_service
+
+    # update the disk image
+    Log -p echo "4. Generating new mount directories"
+    Log -p update_disk_image
 
     # copy new units to location
-    Log -p echo "4. Copying units to $Systemd_Directory"
-    Log cp -v "$Unit_Directory/*" "$Systemd_Directory"
+    Log -p echo "4. Copying service to $Systemd_Directory"
+    Log cp -v "$Service_Directory/*.service" "$Systemd_Directory"
 
     # enable units
-    Log -p echo "5. Enabling units"
-    enable_units "$Unit_Directory"
+    Log -p echo "5. Enabling service"
+    enable_service "$Service_Directory"
     Log -p echo -e "Done!\n"
 }
 
@@ -115,48 +130,61 @@ function perform_remove_all {
         echo "This will remove all software you've installed with pacman," "and revert your Deck to a pre-$Name state."
         confirm_remove_all "Are you absolutely sure you want to do this?"
     fi
-    check_permissions
     Log -p echo "Uninstalling $Name"
 
-    config --load
     # disable units
     Log -p echo "1. Disabling units"
-    disable_units "$Unit_Directory"
+    disable_service "$Service_Directory"
 
-    # delete units
-    Log -p echo "2. Removing units from $Systemd_Directory"
-    delete_units "$Unit_Directory" # Not a typo
+    Log -p echo "2. Removing units"
+    delete_service "$Service_Directory"
 
     # delete $Base_Directory
-    Log -p echo "3. Removing $Name"
+    Log -p echo "2. Removing $Name"
     Log rm -vr "$Base_Directory"
+
+    # inform user about rwfus config left behind
+    Log -p echo "Not removing $Config_File as it may contain important information."
 
     Log -p echo -e "Done!\n"
 }
 
 function add_to_bin {
-    check_permissions
-    local bin_dir="$Base_Directory/usr/local/bin"
-    Log -p echo "Adding $Name to $bin_dir..."
-    Log -p echo "Warning: Disabling/Removing $Name will remove this from PATH!"
-    Log mkdir -vp -- "$bin_dir"
-    if [[ $? != 0 ]]; then
-        Log -p echo "$bin_dir is not writable. Is $Name installed?"
-        exit -3
+    local bin_dir="$Path_Install_Directory"
+    if [ stat_service ]; then
+        local reenable=true
+        disable_service
     fi
+    Log -p echo "Adding $Name to $bin_dir..."
     # Move sources to the bin dir
     Log cp -vr ./rwfus_include "$bin_dir/"
     # Move the main script to the bin dir
     Log cp -vr $0 "$bin_dir/"
+    # Enable steamos-offload's usr-local.mount
+    Log Test systemctl unmask -- "usr-local.mount"
+    Log Test systemctl enable --now -- "usr-local.mount"
+    if [ $reenable ]; then
+        enable_service
+    fi
+
     Log -p echo -e "Done!\n"
 }
 
 function remove_from_bin {
-    check_permissions
-    local bin_dir="$Base_Directory/usr/local/bin"
+    local bin_dir="$Path_Install_Directory"
+    local reenable
+    if [ stat_service ]; then
+        reenable=true
+        disable_service
+    fi
     Log -p echo "Removing $Name from $bin_dir"
     Log rm -vr "$bin_dir/rwfus_include"
-    Log rm -v  "$bin_dir/$0"
+    Log rm -v  "$bin_dir/$(basename $0)"
     if [[ $? != 0 ]]; then return -1; fi
+    if [ $reenable ]; then
+        enable_service
+    fi
+    Log Test systemctl stop -- "usr-local.mount"
+    Log Test systemctl mask -- "usr-local.mount"
     Log -p echo -e "Done!\n"
 }
