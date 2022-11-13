@@ -28,24 +28,24 @@ Due to the way Valve's firmware updates work, doing `pacman -S[y[y]]u` at any ti
 
 ```
 USAGE:
-    rwfus [FLAGS] [OPTIONS] [--] [DIRECTORY]...
+    /usr/local/bin/rwfus [FLAGS] [OPTIONS] [--] [DIRECTORY]...
 
 FLAGS:
     -h, --help          Show this help text, then exit
     -v, --version       Show the version number, then exit
 
     -i, --install*      Install Rwfus
-    -u, --update*       Re-generate systemd mount files, without touching data
+    -u, --update*       Re-generate systemd service files, without touching data
     -r, --remove*       Remove ALL FILES AND DIRECTORIES associated with Rwfus
 
-    -e, --enable*       Activate Rwfus's overlay mounts
-    -d, --disable*      Deactivate Rwfus's overlay mounts
-    -s, --status        Get the status of Rwfus's overlay mounts
+    -e, --enable*       Activate overlays
+    -d, --disable*      Deactivate overlays
+    -s, --status        Get the status of the overlay-mounter and disk image
 
         --mount*        Mount Rwfus's disk image
         --umount*       Unmount Rwfus's disk image
 
-    -I, --install-bin*  Put rwfus into a [...]/usr/local/bin folder
+    -I, --install-bin*  Put /usr/local/bin/rwfus into a [...]/usr/local/bin folder
     -R, --remove-bin*   Remove Rwfus from a [...]/usr/local/bin folder
 
     -t, --test          Use fake directory targets when performing operations
@@ -58,6 +58,10 @@ FLAGS:
                                 Default: /tmp/rwfus.XXXX.log (where X is random)
     -c, --config <path>     Specify a configuration file to use
                                 Default: /opt/rwfus/
+        --backup <dest>*    Backup Rwfus's disk image to (file path) <dest>
+        --restore <src>*    Restore Rwfus's disk image from (file path) <src>
+
+    * options marked with a star require root, unless the --test flag is set.
 
 ARGS:
     <DIRECTORY>...          List of directories to create overlays for

@@ -70,7 +70,6 @@ FLAGS:
                                 Default: $Log_File (where X is random)
     -c, --config <path>     Specify a configuration file to use
                                 Default: $Base_Directory/
-
         --backup <dest>*    Backup $Name's disk image to (file path) <dest>
         --restore <src>*    Restore $Name's disk image from (file path) <src>
 
