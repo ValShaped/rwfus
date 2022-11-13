@@ -44,6 +44,7 @@ EOF
     declare -f mount_disk
     declare -f unmount_disk
     cat rwfus_include/mount.sh          # Copy the mount and unmount functions to the script
+
     printf "\n# service-main: argument parsing and function running\n"
     cat rwfus_include/service-main.sh   # Copy arg parser and script body
 }

@@ -34,7 +34,7 @@ function setup_pacman {
     Log Test pacman-key --init && \
     Log Test pacman-key --populate && \
     Log Test pacman -Sy || \
-    Log -p echo "Failed to set up pacman. See log for details."
+    Log -p echo "Failed to set up pacman. See $Log_File for details."
 }
 
 function perform_install {
