@@ -41,6 +41,8 @@ function load_defaults {
     # Derive all of the above paths
     change_base
 
+    Disk_Image_Size=8G
+
     # Systemd-related things
     Systemd_Directory="/etc/systemd/system"     # Where systemd expects units to be
 
@@ -96,6 +98,7 @@ Directories ${Directories}
 [Service]
 Mount_Options    ${Mount_Options}
 #Disk_Image      ${Disk_Image}
+#Disk_Image_Size ${Disk_Image_Size}
 #Mount_Directory ${Mount_Directory}
 
 [Unit]

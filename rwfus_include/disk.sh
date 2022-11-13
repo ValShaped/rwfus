@@ -22,6 +22,7 @@ source rwfus_include/testlog.sh
 function mount_disk {
     # Set mount options, if none are specified
     mount -vo "${Mount_Options:=loop}" -- "$Disk_Image" "$Mount_Directory"
+    btrfs filesystem resize max "$Mount_Directory"
 }
 
 function unmount_disk {
@@ -60,6 +61,14 @@ function restore_disk {
 }
 
 function update_disk_image {
+    # Don't decrease the size of the drive
+    if [ `numfmt --from iec -- "$Disk_Image_Size"` -gt `stat -c %s -- "$Disk_Image"` ]; then
+        Log -p truncate -s "$Disk_Image_Size" -- "$Disk_Image"
+        #update the sizes of all loop devices, just in case
+        for loop_device in /dev/loop?; do
+            Log losetup -vc $loop_device
+        done
+    fi
     Log Test mount_disk
     local dir_list="${@:-$Directories}"
     for dir in $dir_list; do
@@ -71,7 +80,7 @@ function update_disk_image {
 
 function generate_disk_image {
     local disk_path="${1:-$Disk_Image}"
-    local size="${2:-4G}"
+    local size="${2:-$Disk_Image_Size}"
     local label="${3:-$Name}"
     shift 4
     local directories="${@:-$Directories}"
