@@ -28,7 +28,7 @@ Due to the way Valve's firmware updates work, doing `pacman -S[y[y]]u` at any ti
 
 ```
 USAGE:
-    /usr/local/bin/rwfus [FLAGS] [OPTIONS] [--] [DIRECTORY]...
+    rwfus [FLAGS] [OPTIONS] [--] [DIRECTORY]...
 
 FLAGS:
     -h, --help          Show this help text, then exit
