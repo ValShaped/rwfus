@@ -179,7 +179,7 @@ function remove_from_bin {
     fi
     Log -p echo "Removing $Name from $bin_dir"
     Log rm -vr "$bin_dir/rwfus_include"
-    Log rm -v  "$bin_dir/$0"
+    Log rm -v  "$bin_dir/$(basename $0)"
     if [[ $? != 0 ]]; then return -1; fi
     if [ $reenable ]; then
         enable_service
