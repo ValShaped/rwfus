@@ -39,8 +39,8 @@ function stat_disk {
 function backup_disk {
     # Rationale: btrfs snapshots are not a backup. We do things properly, and copy the $Disk_Image
     if [[ -f "$1" ]]; then
-    echo "Copying $Disk_Image to $1"
-    cp "$Disk_Image" "$1"
+        echo "Copying $Disk_Image to $1"
+        cp "$Disk_Image" "$1"
     else
         echo "Not found: $1"
     fi
@@ -51,12 +51,11 @@ function restore_disk {
     # Do the bare minimum, and check if $1 is actually a disk image
     echo "Checking disk image $1:"
     if btrfs filesystem show -- "$1"; then
-    echo "Copying $1 to $Disk_Image"
-    cp "$1" "$Disk_Image"
+        echo "Copying $1 to $Disk_Image"
+        cp "$1" "$Disk_Image"
     fi
     echo "Disk image $Disk_Image:"
     stat_disk
-    mount_disk
     return
 }
 
@@ -79,4 +78,40 @@ function generate_disk_image {
     truncate -s "$size" -- "$disk_path"
     mkfs.btrfs -ML "$label" "$disk_path"
     update_disk_image "$directories"
+}
+
+function mount_all {
+    mount_disk
+    for target in $Directories; do
+        local escaped=`systemd-escape -p -- "$target"`
+        local lower="$target"
+        local upper="$Upper_Directory/$escaped"
+        local work="$Work_Directory/$escaped"
+        echo "Creating overlay ($upper, $work) on $target"
+        for dir in lower upper work; do
+            if [[ ! -d ${!dir} ]]; then
+
+                echo "  ${dir}dir ${!dir} not found. Skipping."
+                continue 2 # continue the outer loop
+            fi
+        done
+        # Try to mount. If failure, retry later
+        while ! mount -v -t overlay -o index=off,metacopy=off,lowerdir="$lower",upperdir="$upper",workdir="$work" overlay "$target"; do
+            echo "  $target not available (error $?). Retrying..."
+            sleep 5
+        done
+        echo "Successfully overlaid $upper on $target"
+    done
+    # Replace SteamOS-Offload's usr-local mounting with our own bootleg version
+    if [[ `systemctl show -p UnitFileState --value usr-local.mount` =~ enabled ]]; then
+        mount --bind /home/.steamos/offload/usr/local /usr/local
+    fi
+}
+
+function unmount_all {
+    for target in $Directories; do
+        # unmount
+        umount -lv "$target"
+    done
+    unmount_disk
 }
