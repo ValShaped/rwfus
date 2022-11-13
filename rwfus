@@ -47,12 +47,12 @@ FLAGS:
     -v, --version       Show the version number, then exit
 
     -i, --install*      Install $Name
-    -u, --update*       Re-generate systemd mount files, without touching data
+    -u, --update*       Re-generate systemd service files, without touching data
     -r, --remove*       Remove ALL FILES AND DIRECTORIES associated with $Name
 
-    -e, --enable*       Activate $Name's overlay mounts
-    -d, --disable*      Deactivate $Name's overlay mounts
-    -s, --status        Get the status of $Name's overlay mounts
+    -e, --enable*       Activate overlays
+    -d, --disable*      Deactivate overlays
+    -s, --status        Get the status of the overlay-mounter and disk image
 
         --mount*        Mount $Name's disk image
         --umount*       Unmount $Name's disk image
@@ -228,7 +228,7 @@ for operation in ${Operation:=$Default_Operation}; do
             config --load
             if [[ service_state =~ "enabled" ]]; then
                 disable_service
-            $operation $disk_path
+                $operation $disk_path
                 enable_service
             else
                 $operation $disk_path
