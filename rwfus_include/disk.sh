@@ -39,11 +39,11 @@ function stat_disk {
 
 function backup_disk {
     # Rationale: btrfs snapshots are not a backup. We do things properly, and copy the $Disk_Image
-    if [[ -f "$1" ]]; then
+    if [[ ! -f "$1" ]]; then
         echo "Copying $Disk_Image to $1"
         cp "$Disk_Image" "$1"
     else
-        echo "Not found: $1"
+        echo "$1 already exists"
     fi
     return
 }
