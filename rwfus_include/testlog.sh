@@ -1,3 +1,5 @@
+#!/bin/false
+# shellcheck shell=bash
 : <<LICENSE
       testlog.sh: Rwfus
     Copyright (C) 2022 ValShaped (val@soft.fish)
@@ -17,32 +19,24 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 LICENSE
 
-: ${logfile:=default.log}
+: "${Logfile:=default.log}"
 
 function Test {
-    ${TESTMODE+echo test: } $@
-}
-
-function check_permissions {
-    [ "$EUID" -eq 0 ] || [[ $TESTMODE ]]  || {
-        echo "This command must be performed as $(id -un -- 0)"
-        cd "$caller_dir" && sudo $caller_cmd
-        exit $?
-    }
+    ${TESTMODE+echo test: } "$@"
 }
 
 function get_logfile_name {
-    printf "Log saved to $logfile\n"
+    printf "Log saved to %s\n" "$Logfile"
 }
 
-function init_log {
-    logfile=${2:-`mktemp $Log_File`}
-    truncate -s 0 -- "$logfile"
-    if [[ $? != 0 ]]; then
-        echo "Error: Cannot open logfile $logfile for writing."
-        logfile="/dev/null"
-        return -1
-        fi
+function init_log_1 {
+    Logfile="$(mktemp "$Logfile")"
+
+    if ! truncate -s 0 -- "$Logfile"; then
+        echo "Error: Cannot open Logfile $Logfile for writing."
+        Logfile=~"/${Name@L}.log"
+        return 1
+    fi
     Log cat <<EOF
 $Name v$Version ${TESTMODE+[Test Mode active]}
 $Description
@@ -52,7 +46,30 @@ Unit Storage directory: $Service_Directory
 Systemd directory: $Systemd_Directory
 
 EOF
-    chmod --quiet 644 -- "$logfile"
+    chmod --quiet 644 -- "$Logfile"
+    return 0
+}
+
+function init_log {
+    if ! touch -- "$Logfile"; then
+        echo "Error: Cannot open Logfile $Logfile for writing."
+        Logfile="./${Name@L}.log"
+        if init_log; then
+        return 1
+        fi
+    fi
+    # Save preamble
+    Log cat <<EOF
+
+$Name v$Version ${TESTMODE+[Test Mode active]}
+$Description
+
+$Name directory: $Base_Directory
+Unit Storage directory: $Service_Directory
+Systemd directory: $Systemd_Directory
+
+EOF
+    chmod --quiet 644 -- "$Logfile"
     return 0
 }
 
@@ -63,16 +80,17 @@ function Log {
         ;;
     -s|--log-status)
         shift
-        $@ >> $logfile 2>&1
-        echo "$@: $?" >> $logfile 2>&1
+        "$@" >> "$Logfile" 2>&1
+        echo "$*: $?" >> "$Logfile" 2>&1
         ;;
     -p|--preserve-status)
         shift
-        $@ | tee -a $logfile 2>&1 # preserve the output of the command
-        return ${PIPESTATUS[0]}   # preserve the status of the command
+        "$@" | tee -a "$Logfile" 2>&1 # preserve the output of the command
+        return "${PIPESTATUS[0]}" # preserve the status of the command
         ;;
     *)
-        $@ >> $logfile 2>&1
+        "$@" >> "$Logfile" 2>&1
+        return $?
         ;;
     esac
 }

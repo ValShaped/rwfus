@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 : <<LICENSE
       disk.sh: Rwfus
     Copyright (C) 2022 ValShaped (val@soft.fish)
@@ -17,7 +18,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 LICENSE
 
-source rwfus_include/testlog.sh
+: "${IncludeDir:="$(dirname "${BASH_SOURCE[0]}")/rwfus_include"}"
+source "$IncludeDir/testlog.sh"
 
 function mount_disk {
     # Set mount options, if none are specified
@@ -42,6 +44,8 @@ function backup_disk {
     if [[ ! -f "$1" ]]; then
         echo "Copying $Disk_Image to $1"
         cp "$Disk_Image" "$1"
+        # Chown the disk to the directory owner
+        chown "$(stat -c '%u:%g' "$(dirname "$1")")" "$1"
     else
         echo "$1 already exists"
     fi
@@ -52,27 +56,27 @@ function restore_disk {
     # Do the bare minimum, and check if $1 is actually a disk image
     echo "Checking disk image $1:"
     if btrfs filesystem show -- "$1"; then
-        echo "Copying $1 to $Disk_Image"
+        printf "Copying %s to %s\n" "$1" "$Disk_Image"
         cp "$1" "$Disk_Image"
     fi
-    echo "Disk image $Disk_Image:"
+    printf "Disk image %s:" "$Disk_Image"
     stat_disk
     return
 }
 
 function update_disk_image {
     # Don't decrease the size of the drive
-    if [ `numfmt --from iec -- "$Disk_Image_Size"` -gt `stat -c %s -- "$Disk_Image"` ]; then
+    if [ "$(numfmt --from iec -- "$Disk_Image_Size")" -gt "$(stat -c %s -- "$Disk_Image")" ]; then
         Log -p truncate -s "$Disk_Image_Size" -- "$Disk_Image"
         #update the sizes of all loop devices, just in case
         for loop_device in /dev/loop?; do
-            Log losetup -vc $loop_device
+            Log losetup -vc "$loop_device"
         done
     fi
     Log Test mount_disk
-    local dir_list="${@:-$Directories}"
+    local dir_list="${*:-$Directories}"
     for dir in $dir_list; do
-        local escaped_dir=`systemd-escape -p -- "$dir"`
+        local escaped_dir; escaped_dir=$(systemd-escape -p -- "$dir")
         Log mkdir -pv -- "${Upper_Directory}/${escaped_dir}" "${Work_Directory}/${escaped_dir}"
     done
     Log Test unmount_disk
@@ -83,7 +87,7 @@ function generate_disk_image {
     local size="${2:-$Disk_Image_Size}"
     local label="${3:-$Name}"
     shift 4
-    local directories="${@:-$Directories}"
+    local directories="${*:-$Directories}"
     truncate -s "$size" -- "$disk_path"
     mkfs.btrfs -ML "$label" "$disk_path"
     update_disk_image "$directories"
@@ -92,7 +96,7 @@ function generate_disk_image {
 function mount_all {
     mount_disk
     for target in $Directories; do
-        local escaped=`systemd-escape -p -- "$target"`
+        local escaped; escaped=$(systemd-escape -p -- "$target")
         local lower="$target"
         local upper="$Upper_Directory/$escaped"
         local work="$Work_Directory/$escaped"
@@ -112,7 +116,7 @@ function mount_all {
         echo "Successfully overlaid $upper on $target"
     done
     # Replace SteamOS-Offload's usr-local mounting with our own bootleg version
-    if [[ `systemctl show -p UnitFileState --value usr-local.mount` =~ enabled ]]; then
+    if [[ $(systemctl show -p UnitFileState --value usr-local.mount) =~ enabled ]]; then
         mount --bind /home/.steamos/offload/usr/local /usr/local
     fi
 }

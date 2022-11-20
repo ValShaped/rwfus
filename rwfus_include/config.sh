@@ -1,3 +1,5 @@
+#!/bin/false
+# shellcheck shell=bash
 : <<LICENSE
       config.sh: Rwfus
     Copyright (C) 2022 ValShaped (val@soft.fish)
@@ -20,47 +22,47 @@ LICENSE
 # This function loads the default config. Run `rwfus --gen-config` to generate an example file.
 function load_defaults {
     # Default paths
-    Log_File="/tmp/${Name@L}.XXXX.log"
-    Config_File="/etc/opt/${Name@L}.conf"
-
+    export Logfile="/var/log/${Name@L}.log"
+    export Config_File="/etc/opt/${Name@L}.conf"
     # Default Overlay list
     #   /usr : contains /usr/bin, /usr/lib; popular install locations. On path.
     #   /etc/pacman.d /var/lib/pacman /var/cache/pacman : store pacman state
-    Directories="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
-
+    export Directories="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
     # Default directories (These can be changed in the config file. Run `rwfus --gen-config` to generate an example file.)
-    Base_Directory="/opt/${Name@L}" # Where all the files will go
-    Service_Directory=              # Where generated service will go
+    export Base_Directory="/opt/${Name@L}" # Where all the files will go
+    export Service_Directory=              # Where generated service will go
     # Disk
-    Disk_Image=                     # Where the disk image will go
-    Mount_Directory=                # Where the disk image will be mounted
+    export Disk_Image=                     # Where the disk image will go
+    export Mount_Directory=                # Where the disk image will be mounted
     # Overlayfs
-    Upper_Directory=                # Where the overlayfs upper dirs will go
-    Work_Directory=                 # Where the overlayfs work dirs will go
+    export Upper_Directory=                # Where the overlayfs upper dirs will go
+    export Work_Directory=                 # Where the overlayfs work dirs will go
 
     # Derive all of the above paths
     change_base
 
-    Disk_Image_Size=8G
+    export Disk_Image_Size=8G
 
     # Systemd-related things
-    Systemd_Directory="/etc/systemd/system"     # Where systemd expects units to be
+    export Systemd_Directory="/etc/systemd/system"     # Where systemd expects units to be
 
     # Rwfus config is stored in a partitionless btrfs image
-    Mount_Options="loop,compress"                 # Make sure you keep 'loop', so it creates a loop device
+    export Mount_Options="loop,compress"                 # Make sure you keep 'loop', so it creates a loop device
 
     # SteamOS Offload offloads /usr/local to /home/.steamos/offload/usr/local
     # Beware! This will be considered read-only to overlayfs, so adding stuff while rwfus is enabled is not recommended.
-    Path_Install_Directory="/home/.steamos/offload/usr/local/bin"
+    export Path_Install_Directory="/home/.steamos/offload/usr/local/bin"
 }
 
+# Derive subdirs of the Base_Directory
 function change_base {
-    # Service Directory
-    Service_Directory="$Base_Directory/service"   # Where generated service will go
-    Disk_Image="$Base_Directory/${Name@L}.btrfs"  # Where the disk image will go
-    Mount_Directory="$Base_Directory/mount"       # Where the disk image will be mounted
-    Upper_Directory="$Mount_Directory/upper"      # Where the overlayfs upper dirs will go
-    Work_Directory="$Mount_Directory/work"        # Where the overlayfs work dirs will go
+    # Subdirs of Base_Directory
+    export Service_Directory="$Base_Directory/service"   # Where service will go
+    export Disk_Image="$Base_Directory/${Name@L}.btrfs"  # Where the disk image will go
+    export Mount_Directory="$Base_Directory/mount"       # Where the disk image will be mounted
+    # Subdirs of Mount_Directory
+    export Upper_Directory="$Mount_Directory/upper"      # Where the overlayfs upper dirs will go
+    export Work_Directory="$Mount_Directory/work"        # Where the overlayfs work dirs will go
 }
 
 function enable_testmode {
@@ -69,19 +71,19 @@ function enable_testmode {
     local testdir="${1:-./test}"
 
     # Use the change-of-base theorem
-    Base_Directory="$testdir${Base_Directory}"
+    export Base_Directory="$testdir${Base_Directory}"
     change_base
 
     # Change Path_Install_Directory and Systemd_Directory
-    Path_Install_Directory="$testdir$Path_Install_Directory"
-    Systemd_Directory="$testdir$Systemd_Directory"
+    export Path_Install_Directory="$testdir$Path_Install_Directory"
+    export Systemd_Directory="$testdir$Systemd_Directory"
     # Change config and logfile location
-    Config_File="$testdir$Config_File"
-    Log_File="$testdir$Log_File"
+    export Config_File="$testdir$Config_File"
+    export Logfile="$testdir$Logfile"
     # Create test directory tree
     mkdir -p "$Systemd_Directory"
     mkdir -p "$Path_Install_Directory"
-    mkdir -p "$testdir/tmp"
+    mkdir -p "$(dirname "$Logfile")"
 
 }
 
@@ -112,21 +114,20 @@ Mount_Options    ${Mount_Options}
 #Systemd_Directory  ${Systemd_Directory}
 
 EOF
-    ls -l $config_file
+    ls -l "$config_file"
 }
 
 function load_config {
     local config_file=$1
     echo "Loading config file $config_file"
-    if [[ ! -f $config_file ]]; then echo "$config_file not found"; return -1; fi
-    if [[ $CONFIG_LOADED ]];    then echo "Config already loaded";  return -2; fi
+    if [[ ! -f $config_file ]]; then echo "$config_file not found"; return 255; fi
     while read -r var val; do
         # filter lines which start with (some whitespace and) a hash sign or square bracket; those are comments.
         # also filter lines which don't contain any non-space characters.
         local expression='^[[:space:]]*[^\[\#[:space:]]+'
         if [[ "$var" =~ $expression ]]; then
-            printf "> $var: \"$val\"\n"
-            declare -g $var="${val}"
+            declare -g "$var"="${val}"
+            printf "> %s: \"%s\"\n" "$var" "${!var}"
             if [[ "$var" =~ "Base_Directory" ]]; then
                 # Set the other directories relative to this one
                 # Since Base_Directory comes first in the config,
@@ -134,8 +135,7 @@ function load_config {
                 change_base
             fi
         fi
-    done < $config_file
-    CONFIG_LOADED=1
+    done < "$config_file"
     echo
 }
 
@@ -143,20 +143,19 @@ function config {
     local config_file="${2:-$Config_File}"
     case "$1" in
         -l|--load)
-            load_config "$config_file"
-            if [[ $? -eq -1 ]]; then
+            if load_config "$config_file"; then
                 load_defaults
             fi
         ;;
         -s|--store)
             if [[ -f "$config_file" ]]; then
                 # Make a new file
-                > "$config_file"
+                touch "$config_file"
             fi
             save_config "$config_file"
         ;;
         *)
-            return -128
+            return 127
         ;;
     esac
 }
