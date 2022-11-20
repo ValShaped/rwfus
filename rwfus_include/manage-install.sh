@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 : <<LICENSE
       manage-install.sh: Rwfus
     Copyright (C) 2022 ValShaped (val@soft.fish)
@@ -18,23 +19,28 @@
 LICENSE
 
 # Install
-source rwfus_include/service.sh
-source rwfus_include/disk.sh
-source rwfus_include/testlog.sh
+: "${IncludeDir:="$(dirname "${BASH_SOURCE[0]}")/rwfus_include"}"
+source "$IncludeDir/service.sh"
+source "$IncludeDir/disk.sh"
+source "$IncludeDir/testlog.sh"
 
 function generate_ovfs_dirs {
-    local dir_list="$@"
+    local dir_list="$*"
     for dir in $dir_list; do
-        local escaped_dir=`systemd-escape -p -- "$dir"`
+        local escaped_dir
+        escaped_dir="$(systemd-escape -p -- "$dir")"
         Log Test mkdir -pv "${Upper_Directory}/${escaped_dir}" "${Work_Directory}/${escaped_dir}"
     done
 }
 
 function setup_pacman {
-    Log Test pacman-key --init && \
-    Log Test pacman-key --populate && \
-    Log Test pacman -Sy || \
-    Log -p echo "Failed to set up pacman. See $Log_File for details."
+    if   ! Log Test pacman-key --init; then
+        Log -p echo "Failed to initialize pacman keyring. See $Logfile for details."
+    elif ! Log Test pacman-key --populate; then
+        Log -p echo "Failed to populate pacman keyring. See $Logfile for details."
+    elif ! Log Test pacman -Sy; then
+        Log -p echo "Failed to synchronize pacman database. See $Logfile for details."
+    fi
 }
 
 function perform_install {
@@ -64,7 +70,7 @@ function perform_install {
     Log -p echo "6. Enabling service unit"
     enable_service
 
-    if [[ $? -eq 0 ]]; then
+    if enable_service; then
         Log -p echo "7. Setting up pacman"
         setup_pacman
         Log -p echo -e "Done!\n"
@@ -75,7 +81,7 @@ function perform_install {
 
 function perform_update {
     # Ensure the files are generated using the same settings as before
-    local units=`ls -- "$Service_Directory"`
+    local units; units=$(ls -- "$Service_Directory")
     Log -p echo "Updating [ $units ] to latest version"
 
     # disable units
@@ -85,7 +91,7 @@ function perform_update {
     # delete units
     Log -p echo "2. Removing service"
     delete_service "$Service_Directory"
-    Log rm -v $Service_Directory/*
+    Log rm -v "$Service_Directory"/*
 
     # generate new units
     Log -p echo "3. Generating service"
@@ -96,20 +102,20 @@ function perform_update {
     Log -p update_disk_image
 
     # copy new units to location
-    Log -p echo "4. Copying service to $Systemd_Directory"
-    Log cp -v "$Service_Directory/*.service" "$Systemd_Directory"
+    Log -p echo "5. Copying service to $Systemd_Directory"
+    Log cp -v "$Service_Directory"/*.service "$Systemd_Directory"
 
     # enable units
-    Log -p echo "5. Enabling service"
+    Log -p echo "6. Enabling service"
     enable_service "$Service_Directory"
     Log -p echo -e "Done!\n"
 }
 
 function confirm_remove_all {
     local user_confirmed_delete
-    while [ ! $user_confirmed_delete ]; do
+    while [ ! "$user_confirmed_delete" ]; do
         local input
-        read -rp "$@ [y|N] " input
+        read -rp "$* [y|N] " input
         case $input in
             Y*|y*)
                 user_confirmed_delete="yes"
@@ -125,9 +131,9 @@ function confirm_remove_all {
 }
 
 function perform_remove_all {
-    if [[ "$@" != "please" ]]; then
+    if [[ ! "$*" =~ "please" ]]; then
         confirm_remove_all "Are you sure you want to uninstall $Name?"
-        echo "This will remove all software you've installed with pacman," "and revert your Deck to a pre-$Name state."
+        echo "This will remove all files in $Name's overlays, including any software you've installed!"
         confirm_remove_all "Are you absolutely sure you want to do this?"
     fi
     Log -p echo "Uninstalling $Name"
@@ -151,19 +157,22 @@ function perform_remove_all {
 
 function add_to_bin {
     local bin_dir="$Path_Install_Directory"
-    if [ stat_service ]; then
+    if stat_service > /dev/null; then
         local reenable=true
+        Log -p echo "Stopping $Name"
         disable_service
     fi
-    Log -p echo "Adding $Name to $bin_dir..."
+    Log -p echo "Adding $Name to $bin_dir"
     # Move sources to the bin dir
-    Log cp -vr ./rwfus_include "$bin_dir/"
+    Log cp -vr "$IncludeDir" "$bin_dir/"
     # Move the main script to the bin dir
-    Log cp -vr $0 "$bin_dir/"
+    Log cp -vr "$0" "$bin_dir/"
     # Enable steamos-offload's usr-local.mount
+    Log -p echo "Unmasking and enabling usr-local.mount"
     Log Test systemctl unmask -- "usr-local.mount"
     Log Test systemctl enable --now -- "usr-local.mount"
     if [ $reenable ]; then
+        Log -p echo "Restarting $Name"
         enable_service
     fi
 
@@ -172,19 +181,22 @@ function add_to_bin {
 
 function remove_from_bin {
     local bin_dir="$Path_Install_Directory"
-    local reenable
-    if [ stat_service ]; then
+    local reenable=false
+    if stat_service > /dev/null; then
         reenable=true
+        Log -p echo "Stopping $Name"
         disable_service
     fi
     Log -p echo "Removing $Name from $bin_dir"
-    Log rm -vr "$bin_dir/rwfus_include"
-    Log rm -v  "$bin_dir/$(basename $0)"
-    if [[ $? != 0 ]]; then return -1; fi
-    if [ $reenable ]; then
+    if (Log rm -vr "$bin_dir/rwfus_include" && Log rm -v  "$bin_dir/$(basename "$0")"); then
+        Log -p echo "Masking usr-local.mount"
+        Log Test systemctl stop -- "usr-local.mount"
+        Log Test systemctl mask -- "usr-local.mount"
+    fi
+
+    if $reenable; then
+        Log -p echo "Restarting $Name"
         enable_service
     fi
-    Log Test systemctl stop -- "usr-local.mount"
-    Log Test systemctl mask -- "usr-local.mount"
     Log -p echo -e "Done!\n"
 }

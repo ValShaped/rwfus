@@ -18,15 +18,24 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 LICENSE
 caller_dir=${PWD}
-caller_cmd="$0 $@"
+caller_cmd=("$0" "$@")
 
-cd $(dirname "$BASH_SOURCE[0]")
-source rwfus_include/info.sh           # Project information (name, etc.)
-source rwfus_include/testlog.sh        # Logging
-source rwfus_include/service.sh        # Generate and manage service and associated unit file
-source rwfus_include/disk.sh           # Generate and manage disk images
-source rwfus_include/manage-install.sh # Installation management
-source rwfus_include/config.sh         # Configuration files
+function check_permissions {
+    [ "$EUID" -eq 0 ] || [[ $TESTMODE ]] || {
+        echo "This command must be performed as $(id -un -- 0)" >& 2
+        sudo "${caller_cmd[@]}"
+        exit $?
+    }
+}
+
+# shellcheck source-path=SCRIPTDIR/rwfus_include
+: "${IncludeDir:="$(dirname "${BASH_SOURCE[0]}")/rwfus_include"}"
+source "$IncludeDir/info.sh"           # Project information (name, etc.)
+source "$IncludeDir/testlog.sh"        # Logging
+source "$IncludeDir/service.sh"        # Generate and manage service and associated unit file
+source "$IncludeDir/disk.sh"           # Generate and manage disk images
+source "$IncludeDir/manage-install.sh" # Installation management
+source "$IncludeDir/config.sh"         # Configuration files
 
 # Load the default configuration.
 load_defaults
@@ -67,7 +76,7 @@ FLAGS:
 
     OPTIONS:
     -l, --logfile <path>    Specify the location of $Name's log file
-                                Default: $Log_File (where X is random)
+                                Default: $Logfile (where X is random)
     -c, --config <path>     Specify a configuration file to use
                                 Default: $Base_Directory/
         --backup <dest>*    Backup $Name's disk image to (file path) <dest>
@@ -82,14 +91,15 @@ EOF
 }
 
 # Parse options
-LONGOPTS="help,install,update,remove,enable,disable,status,mount,umount,backup:,restore:,test,version,install-bin,remove-bin,gen-config,gen-script,gen-disk,logfile:,config:"
-SHORTOPTS="hiuredstvIRgl:c:"
-PARSED=`getopt --options "$SHORTOPTS" --longoptions "$LONGOPTS" --name $0 -- $@`
-if [[ $? != 0 ]]; then
+longopts="help,install,update,remove,enable,disable,status,mount,umount,backup:,restore:,test,version,install-bin,remove-bin,gen-config,gen-script,gen-disk,logfile:,config:"
+shortopts="hiuredstvIRgl:c:"
+#if [[ $? != 0 ]]; then
+if ! parsed="$(getopt --options "$shortopts" --longoptions "$longopts" --name "$0" -- "$@")"; then
     echo "Usage: $0 [-hiuredstvg] [-l path/to/logfile] [-c path/to/config] [/dir1 /dir2 ...]"
-    exit -128;
+    exit 128;
 fi
-eval set -- "$PARSED"
+eval set -- "$parsed"
+unset shortopts parsed longopts
 
 while true; do
     case "$1" in
@@ -149,7 +159,7 @@ while true; do
         ;;
     # Test mode
         -t|--test)
-            enable_testmode
+            enable_testmode ./test
             shift
             ;;
     # Sample generators
@@ -168,7 +178,7 @@ while true; do
         --gen-disk)
             shift 2
             sample_fullpath="$caller_dir/${Name@L}.btrfs"
-            generate_disk_image "$sample_fullpath" $@
+            generate_disk_image "$sample_fullpath" "$@"
             echo "Wrote disk image to $sample_fullpath"
             exit 0
             ;;
@@ -183,12 +193,12 @@ while true; do
         ;;
     # Options
         -l|--logfile)
-            Log_File="$2"
+            Logfile="$2"
             shift 2
             ;;
         -c|--config)
             Config_File="$2"
-            load_config $Config_File
+            load_config "$Config_File"
             shift 2
             ;;
 
@@ -198,7 +208,7 @@ while true; do
             ;;
         *)
             echo "You've encountered unreachable path #1, invalid arg \"$1\"! Please tell a developer right away."
-            exit -1
+            exit 129
             ;;
     esac
 done
@@ -208,7 +218,7 @@ function initialize_log {
     if [[ ! $LOG_INITIALIZED ]]; then
         LOG_INITIALIZED=true
         Log --new
-        Log echo $caller_cmd
+        Log echo "${caller_cmd[@]}"
         trap get_logfile_name EXIT
     fi
 }
@@ -221,17 +231,19 @@ for operation in ${Operation:=$Default_Operation}; do
             check_permissions
             initialize_log
             Log config --load
-            $operation $@
+            $operation "$@"
         ;;
         "mount_disk"|"unmount_disk"|"backup_disk"|"restore_disk")
             check_permissions
             config --load
-            if [[ service_state =~ "enabled" ]]; then
+            state=$(service_state)
+            echo "$state"
+            if [[ "$state" =~ "active" ]]; then
                 disable_service
-                $operation $disk_path
+                $operation "$disk_path"
                 enable_service
             else
-                $operation $disk_path
+                $operation "$disk_path"
             fi
         ;;
         "stat_service"|"stat_disk")
@@ -242,13 +254,13 @@ for operation in ${Operation:=$Default_Operation}; do
             exit 0
         ;;
         "version")
-            printf "$Name v$Version\n$Description\n"
+            printf "%s v%s\n%s\n" "$Name" "$Version" "$Description"
         ;;
         *)
             trap get_logfile_name EXIT
             initialize_log
             Log -p echo "You've encountered unreachable path #2, invalid operation \"$operation\"! Contact a developer and let them know!"
-            exit -1
+            exit 130
         ;;
     esac
 done

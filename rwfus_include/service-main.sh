@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 : <<LICENSE
       Rwfus
     Copyright (C) 2022 ValShaped (val@soft.fish)
@@ -39,15 +40,16 @@ EOF
 }
 
 # parse args
-LONGOPTS="help,version,start,stop,reload"
-SHORTOPTS="hvedr"
-PARSED=`getopt --options "$SHORTOPTS" --longoptions "$LONGOPTS" --name $0 -- $@`
-if [[ $? != 0 ]]; then
+longopts="help,version,start,stop,reload"
+shortopts="hvedr"
+
+if ! parsed=$(getopt --options "$shortopts" --longoptions "$longopts" --name "$0" -- "$@"); then
     echo "Usage: $0 [-hved | --help | --option | --enable | --disable ]"
-    exit -128;
+    exit 127;
 fi
-eval set -- "$PARSED"
-echo "$0 $@"
+eval set -- "$parsed"
+unset parsed shortopts longopts
+echo "$0" "$@"
 
 while true; do
     case "$1" in
@@ -79,13 +81,13 @@ while true; do
             ;;
         *)
             echo "Unknown option: $1"
-            exit -1
+            exit 255
             ;;
     esac
 done
 
 # load the config file
-load_config $Config_File
+load_config "$Config_File"
 
 # perform operations
 for operation in ${Operation:="print_help"}; do
@@ -94,14 +96,14 @@ for operation in ${Operation:="print_help"}; do
             # Mask pacman-cleanup.service, which automatically deletes pacman keyring on reboot
             systemctl mask -- "pacman-cleanup.service"
             # Disable SteamOS-Offload's usr-local mounting
-            if [[ `systemctl show -p UnitFileState --value usr-local.mount` =~ enabled ]]; then
+            if [[ $(systemctl show -p UnitFileState --value usr-local.mount) =~ enabled ]]; then
                 systemctl stop usr-local.mount
             fi
             mount_all
         ;;
         "unmount_all")
             unmount_all
-            if [[ `systemctl show -p UnitFileState --value usr-local.mount` =~ enabled ]]; then
+            if [[ $(systemctl show -p UnitFileState --value usr-local.mount) =~ enabled ]]; then
                 systemctl start "usr-local.mount"
             fi
             systemctl unmask -- "pacman-cleanup.service"
@@ -110,11 +112,11 @@ for operation in ${Operation:="print_help"}; do
             print_help
         ;;
         "version")
-            printf "$Name v$Version\n$Description\n"
+            printf "%s v%s\n%s\n" "$Name" "$Version" "$Description"
         ;;
         *)
             echo "Unknown operation: \"$operation\""
-            exit -2;
+            exit 254;
         ;;
     esac
 done
