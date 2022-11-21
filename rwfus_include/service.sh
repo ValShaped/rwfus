@@ -72,7 +72,6 @@ RemainAfterExit=yes
 TimeoutSec=3
 ExecStart=$script_path  --start
 ExecStop=$script_path   --stop
-ExecReload=$script_path --stop && $script_path --start
 
 [Install]
 WantedBy=$wanted_by
