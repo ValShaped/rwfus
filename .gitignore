@@ -1,4 +1,5 @@
 # ---> Project-specific
+rwfus.conf
 test/**
 
 # ---> VisualStudioCode
