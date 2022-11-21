@@ -33,15 +33,14 @@ FLAGS:
 
     -e, --start*        Activate $Name's overlay mounts
     -d, --stop*         Deactivate $Name's overlay mounts
-    -r, --reload*       Reload $Name's overlay mounts
 
     * flags marked with a star require root
 EOF
 }
 
 # parse args
-longopts="help,version,start,stop,reload"
-shortopts="hvedr"
+longopts="help,version,start,stop"
+shortopts="hved"
 
 if ! parsed=$(getopt --options "$shortopts" --longoptions "$longopts" --name "$0" -- "$@"); then
     echo "Usage: $0 [-hved | --help | --option | --enable | --disable ]"
@@ -66,9 +65,6 @@ while true; do
         -d|--stop)
             Operation="unmount_all "
             shift
-            ;;
-        -r|--reload)
-            Operation="unmount_all mount_all"
             ;;
     # Get information
         -v|--version)
