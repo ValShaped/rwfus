@@ -1,4 +1,4 @@
-# shellcheck shell=bash
+#!/bin/bash
 : <<LICENSE
       service.sh: Rwfus
     Copyright (C) 2022 ValShaped (val@soft.fish)
@@ -34,7 +34,7 @@ echo "$Description"
 EOF
     cat "$IncludeDir"/info.sh           # Copy the project's info to the script
     printf "\n# config: Load only\n"
-    echo "Config_File=\"$Config_File\"" # Copy the Config path to the script, so it knows where to load from
+    echo "cf_Config_File=\"$cf_Config_File\"" # Copy the Config path to the script, so it knows where to load from
     declare -f change_base
     declare -f load_config              # Copy the load_config function to the script
 
@@ -80,8 +80,8 @@ EOF
 
 function generate_service {
     local service_name="${Name@L}d"
-    local script_path="$Service_Directory/$service_name.sh"
-    local unit_path="$Service_Directory/$service_name.service"
+    local script_path="$cf_Service_Directory/$service_name.sh"
+    local unit_path="$cf_Service_Directory/$service_name.service"
     printf "Generating service %s\n  script %s\n  unit   %s\n" "$service_name" "$script_path" "$unit_path"
     generate_service_script > "$script_path" && chmod +x "$script_path"
     generate_service_unit "$script_path" > "$unit_path"
@@ -90,7 +90,7 @@ function generate_service {
 function enable_service {
     # Enable the service, or print an error
     if ! Log Test systemctl enable --now -- "$(list_service)"; then
-        Log -p printf "Error when enabling service. See %s for information.\n" "$Logfile" >& 2
+        Log -p printf "Error when enabling service. See %s for information.\n" "$cf_Logfile" >& 2
         return 1
     fi
 }
@@ -98,15 +98,15 @@ function enable_service {
 function disable_service {
     # Disable the service, or print an error
     if ! Log Test systemctl disable --now -- "$(list_service)"; then
-        Log -p printf "Error when disabling service. See %s for information.\n" "$Logfile" >& 2
+        Log -p printf "Error when disabling service. See %s for information.\n" "$cf_Logfile" >& 2
         return 1
     fi
 }
 
-function delete_service {
+function remove_service {
     for unit in $(list_service); do
-        if ! Log rm -v -- "$Systemd_Directory/$unit"; then
-            Log -p printf "Error when deleting service. See %s for information.\n" "$Logfile" >& 2
+        if ! Log rm -v -- "$cf_Systemd_Directory/$unit"; then
+            Log -p printf "Error when deleting service. See %s for information.\n" "$cf_Logfile" >& 2
             return 1
         fi
     done
@@ -117,7 +117,7 @@ function service_state {
 }
 
 function stat_service {
-    if [[ -d $Service_Directory ]]; then
+    if [[ -d $cf_Service_Directory ]]; then
         SYSTEMD_COLORS=1 Test systemctl status --lines 0 --no-pager -- "$(list_service)"
     else
         echo "Rwfus is not installed. Install it with \`rwfus --install\`"
@@ -126,5 +126,42 @@ function stat_service {
 }
 
 function list_service {
-    find "$Service_Directory" -name "*.service" -printf "%f"
+    find "$cf_Service_Directory" -name "*.service" -printf "%f"
+}
+
+function service {
+    case "$1" in
+        g|generate)
+        shift
+        case "$1" in
+            script)
+                generate_service_script
+            ;;
+            unit)
+                generate_service_unit
+            ;;
+            *)
+                generate_service
+            ;;
+        esac
+        ;;
+        e|enable)
+            shift
+            enable_service
+        ;;
+        d|disable)
+            shift
+            disable_service
+        ;;
+        r|remove)
+            shift
+            remove_service
+        ;;
+        l|list)
+            list_service
+        ;;
+        *)
+            stat_service
+        ;;
+    esac
 }

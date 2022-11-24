@@ -83,26 +83,44 @@ while true; do
 done
 
 # load the config file
-load_config "$Config_File"
+load_config "$cf_Config_File"
+
+function systemctl-if-enabled {
+    if systemctl is-enabled -q "$2"; then systemctl "$1" "$2"; fi
+}
+
+# Iteratively operate systemctl over a list of services
+function iterate_systemctl {
+    local operation="$1"
+    local unit_list;
+    shift
+    unit_list="$*"
+    for unit in $unit_list; do
+        systemctl-if-enabled "$operation" "$unit"
+    done
+}
 
 # perform operations
 for operation in ${Operation:="print_help"}; do
     case "$operation" in
         "mount_all")
             # Mask pacman-cleanup.service, which automatically deletes pacman keyring on reboot
-            systemctl mask -- "pacman-cleanup.service"
-            # Disable SteamOS-Offload's usr-local mounting
-            if [[ $(systemctl show -p UnitFileState --value usr-local.mount) =~ enabled ]]; then
-                systemctl stop usr-local.mount
-            fi
-            mount_all
+            systemctl mask -- "$cf_Mask_Units"
+            iterate_systemctl stop  "${cf_Stop_Units}"
+            iterate_systemctl stop  "${cf_Restart_Units}"; res=$?
+            mount_all;                                     res+=$?
+            iterate_systemctl start "${cf_Restart_Units}"; res+=$?
+            exit "$res"
         ;;
         "unmount_all")
-            unmount_all
-            if [[ $(systemctl show -p UnitFileState --value usr-local.mount) =~ enabled ]]; then
-                systemctl start "usr-local.mount"
+            iterate_systemctl stop  "${cf_Restart_Units}"; res=$?
+            unmount_all;                                   res+=$?
+            if [[ $(systemctl is-system-running) != "stopping" ]]; then
+                iterate_systemctl start "${cf_Restart_Units}"; res+=$?
+                iterate_systemctl start "${cf_Stop_Units}";    res+=$?
             fi
-            systemctl unmask -- "pacman-cleanup.service"
+            systemctl unmask -- "$cf_Mask_Units"
+            exit "$res"
         ;;
         "print_help")
             print_help

@@ -19,44 +19,20 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 LICENSE
 
-: "${Logfile:=default.log}"
+: "${cf_Logfile:=default.log}"
 
 function Test {
     ${TESTMODE+echo test: } "$@"
 }
 
 function get_logfile_name {
-    printf "Log saved to %s\n" "$Logfile"
-}
-
-function init_log_1 {
-    Logfile="$(mktemp "$Logfile")"
-
-    if ! truncate -s 0 -- "$Logfile"; then
-        echo "Error: Cannot open Logfile $Logfile for writing."
-        Logfile=~"/${Name@L}.log"
-        return 1
-    fi
-    Log cat <<EOF
-$Name v$Version ${TESTMODE+[Test Mode active]}
-$Description
-
-$Name directory: $Base_Directory
-Unit Storage directory: $Service_Directory
-Systemd directory: $Systemd_Directory
-
-EOF
-    chmod --quiet 644 -- "$Logfile"
-    return 0
+    printf "%s%s%s\n" "${1:-"Log saved to "}" "$cf_Logfile" "$2"
 }
 
 function init_log {
-    if ! touch -- "$Logfile"; then
-        echo "Error: Cannot open Logfile $Logfile for writing."
-        Logfile="./${Name@L}.log"
-        if init_log; then
-        return 1
-        fi
+    if ! touch -- "$cf_Logfile"; then
+        echo "Error: Cannot open cf_Logfile $cf_Logfile for writing."
+        cf_Logfile="./${Name@L}.log"
     fi
     # Save preamble
     Log cat <<EOF
@@ -64,12 +40,12 @@ function init_log {
 $Name v$Version ${TESTMODE+[Test Mode active]}
 $Description
 
-$Name directory: $Base_Directory
-Unit Storage directory: $Service_Directory
-Systemd directory: $Systemd_Directory
+$Name directory: $cf_Base_Directory
+Unit Storage directory: $cf_Service_Directory
+Systemd directory: $cf_Systemd_Directory
 
 EOF
-    chmod --quiet 644 -- "$Logfile"
+    chmod --quiet 644 -- "$cf_Logfile"
     return 0
 }
 
@@ -80,12 +56,12 @@ function Log {
         ;;
     -s|--log-status)
         shift
-        "$@" >> "$Logfile" 2>&1
-        echo "$*: $?" >> "$Logfile" 2>&1
+        "$@" >> "$cf_Logfile" 2>&1
+        echo "$*: $?" >> "$cf_Logfile" 2>&1
         ;;
     -p|--preserve-status)
         shift
-        "$@" | tee -a "$Logfile" 2>&1 # preserve the output of the command
+        "$@" | tee -a "$cf_Logfile" 2>&1 # preserve the output of the command
         return "${PIPESTATUS[0]}" # preserve the status of the command
         ;;
     -n|--name)
@@ -93,7 +69,7 @@ function Log {
         get_logfile_name "$@"
     ;;
     *)
-        "$@" >> "$Logfile" 2>&1
+        "$@" >> "$cf_Logfile" 2>&1
         return $?
         ;;
     esac
