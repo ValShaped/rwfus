@@ -76,9 +76,9 @@ FLAGS:
 
     OPTIONS:
     -l, --logfile <path>    Specify the location of $Name's log file
-                                Default: $Logfile (where X is random)
+                                Default: $cf_Logfile (where X is random)
     -c, --config <path>     Specify a configuration file to use
-                                Default: $Base_Directory/
+                                Default: $cf_Base_Directory/
         --backup <dest>*    Backup $Name's disk image to (file path) <dest>
         --restore <src>*    Restore $Name's disk image from (file path) <src>
 
@@ -86,7 +86,7 @@ FLAGS:
 
 ARGS:
     <DIRECTORY>...          List of directories to create overlays for
-                                Defaults: $Directories
+                                Defaults: $cf_Directories
 EOF
 }
 
@@ -193,7 +193,7 @@ while true; do
         ;;
     # Options
         -l|--logfile)
-            Logfile="$2"
+            cf_Logfile="$2"
             shift 2
             ;;
         -c|--config)
@@ -212,7 +212,6 @@ while true; do
             ;;
     esac
 done
-
 
 function initialize_log {
     if [[ ! $LOG_INITIALIZED ]]; then

@@ -23,27 +23,27 @@ source "$IncludeDir/testlog.sh"
 
 function mount_disk {
     # Set mount options, if none are specified
-    mount -vo "${Mount_Options:=loop}" -- "$Disk_Image" "$Mount_Directory"
-    btrfs filesystem resize max "$Mount_Directory"
+    mount -vo "${cf_Mount_Options:=loop}" -- "$cf_Disk_Image_Path" "$cf_Mount_Directory" && \
+    btrfs filesystem resize max "$cf_Mount_Directory"
 }
 
 function unmount_disk {
     sync
-    umount -v -- "$Disk_Image"
+    umount -v -- "$cf_Disk_Image_Path"
 }
 
 function stat_disk {
-    if [[ -e $Disk_Image ]]; then
+    if [[ -e $cf_Disk_Image_Path ]]; then
         echo ""
-        btrfs filesystem show -- "$Disk_Image"
+        btrfs filesystem show -- "$cf_Disk_Image_Path"
     fi
 }
 
 function backup_disk {
-    # Rationale: btrfs snapshots are not a backup. We do things properly, and copy the $Disk_Image
+    # Rationale: btrfs snapshots are not a backup. We do things properly, and copy the $cf_Disk_Image
     if [[ ! -f "$1" ]]; then
-        echo "Copying $Disk_Image to $1"
-        cp "$Disk_Image" "$1"
+        echo "Copying $cf_Disk_Image_Path to $1"
+        cp "$cf_Disk_Image_Path" "$1"
         # Chown the disk to the directory owner
         chown "$(stat -c '%u:%g' "$(dirname "$1")")" "$1"
     else
@@ -56,73 +56,72 @@ function restore_disk {
     # Do the bare minimum, and check if $1 is actually a disk image
     echo "Checking disk image $1:"
     if btrfs filesystem show -- "$1"; then
-        printf "Copying %s to %s\n" "$1" "$Disk_Image"
-        cp "$1" "$Disk_Image"
+        printf "Copying %s to %s\n" "$1" "$cf_Disk_Image_Path"
+        cp "$1" "$cf_Disk_Image_Path"
     fi
-    printf "Disk image %s:" "$Disk_Image"
+    printf "Disk image %s:" "$cf_Disk_Image_Path"
     stat_disk
     return
 }
 
 function update_disk_image {
     # Don't decrease the size of the drive
-    if [ "$(numfmt --from iec -- "$Disk_Image_Size")" -gt "$(stat -c %s -- "$Disk_Image")" ]; then
-        Log -p truncate -s "$Disk_Image_Size" -- "$Disk_Image"
+    if [ "$(numfmt --from iec -- "$cf_Disk_Image_Size")" -gt "$(stat -c %s -- "$cf_Disk_Image_Path")" ]; then
+        Log -p truncate -s "$cf_Disk_Image_Size" -- "$cf_Disk_Image_Path"
         #update the sizes of all loop devices, just in case
         for loop_device in /dev/loop?; do
-            Log losetup -vc "$loop_device"
+            Log Test losetup -vc "$loop_device"
         done
     fi
     Log Test mount_disk
-    local dir_list="${*:-$Directories}"
+    local dir_list="${*:-$cf_Directories}"
     for dir in $dir_list; do
         local escaped_dir; escaped_dir=$(systemd-escape -p -- "$dir")
-        Log mkdir -pv -- "${Upper_Directory}/${escaped_dir}" "${Work_Directory}/${escaped_dir}"
+        Log mkdir -pv -- "${cf_Upper_Directory}/${escaped_dir}" "${cf_Work_Directory}/${escaped_dir}"
     done
     Log Test unmount_disk
 }
 
 function generate_disk_image {
-    local disk_path="${1:-$Disk_Image}"
-    local size="${2:-$Disk_Image_Size}"
+    local disk_path="${1:-$cf_Disk_Image_Path}"
+    local size="${2:-$cf_Disk_Image_Size}"
     local label="${3:-$Name}"
     shift 4
-    local directories="${*:-$Directories}"
+    local directories="${*:-$cf_Directories}"
     truncate -s "$size" -- "$disk_path"
     mkfs.btrfs -ML "$label" "$disk_path"
     update_disk_image "$directories"
 }
 
 function mount_all {
-    mount_disk
-    for target in $Directories; do
+     if ! mount_disk; then
+        printf "Could not mount disk.\n"
+        return 255;
+    fi
+    for target in $cf_Directories; do
         local escaped; escaped=$(systemd-escape -p -- "$target")
         local lower="$target"
-        local upper="$Upper_Directory/$escaped"
-        local work="$Work_Directory/$escaped"
+        local upper="$cf_Upper_Directory/$escaped"
+        local work="$cf_Work_Directory/$escaped"
         echo "Creating overlay ($upper, $work) on $target"
         for dir in lower upper work; do
             if [[ ! -d ${!dir} ]]; then
-
-                echo "  ${dir}dir ${!dir} not found. Skipping."
-                continue 2 # continue the outer loop
+                echo "  ${dir}dir ${!dir} not found. Aborting."
+                unmount_all
+                return 1
             fi
         done
-        # Try to mount. If failure, retry later
-        while ! mount -v -t overlay -o index=off,metacopy=off,lowerdir="$lower",upperdir="$upper",workdir="$work" overlay "$target"; do
-            echo "  $target not available (error $?). Retrying..."
-            sleep 5
-        done
-        echo "Successfully overlaid $upper on $target"
+        # Try to mount. If failure, skip
+        if ! mount -v -t overlay -o index=off,metacopy=off,lowerdir="$lower",upperdir="$upper",workdir="$work" overlay "$target"; then
+            echo "  $target not available (error $?). skipping..."
+        else
+            echo "Successfully overlaid $upper on $target"
+        fi
     done
-    # Replace SteamOS-Offload's usr-local mounting with our own bootleg version
-    if [[ $(systemctl show -p UnitFileState --value usr-local.mount) =~ enabled ]]; then
-        mount --bind /home/.steamos/offload/usr/local /usr/local
-    fi
 }
 
 function unmount_all {
-    for target in $Directories; do
+    for target in $cf_Directories; do
         # unmount
         umount -lv "$target"
     done
