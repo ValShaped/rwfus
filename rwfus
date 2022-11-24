@@ -159,7 +159,7 @@ while true; do
         ;;
     # Test mode
         -t|--test)
-            enable_testmode ./test
+            enable_testmode
             shift
             ;;
     # Sample generators
@@ -197,8 +197,8 @@ while true; do
             shift 2
             ;;
         -c|--config)
-            Config_File="$2"
-            load_config "$Config_File"
+            CONFIG_SOURCE="$2"
+            config --load "$2"
             shift 2
             ;;
 
@@ -219,7 +219,7 @@ function initialize_log {
         LOG_INITIALIZED=true
         Log --new
         Log echo "${caller_cmd[@]}"
-        trap get_logfile_name EXIT
+        trap "Log --name" EXIT
     fi
 }
 

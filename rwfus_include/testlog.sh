@@ -88,6 +88,10 @@ function Log {
         "$@" | tee -a "$Logfile" 2>&1 # preserve the output of the command
         return "${PIPESTATUS[0]}" # preserve the status of the command
         ;;
+    -n|--name)
+        shift
+        get_logfile_name "$@"
+    ;;
     *)
         "$@" >> "$Logfile" 2>&1
         return $?
