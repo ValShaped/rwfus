@@ -91,12 +91,16 @@ function systemctl-if-enabled {
 
 # Iteratively operate systemctl over a list of services
 function iterate_systemctl {
+    echo "$@"
     local operation="$1"
-    local unit_list;
     shift
-    unit_list="$*"
-    for unit in $unit_list; do
-        systemctl-if-enabled "$operation" "$unit"
+    #shellcheck disable=2068 # please shut up about the globbing
+    for unit in $@; do
+        if [[ "${operation}" =~ mask ]]; then
+            systemctl "$operation" "$unit"
+        else
+            systemctl-if-enabled "$operation" "$unit"
+        fi
     done
 }
 
@@ -104,22 +108,21 @@ function iterate_systemctl {
 for operation in ${Operation:="print_help"}; do
     case "$operation" in
         "mount_all")
-            # Mask pacman-cleanup.service, which automatically deletes pacman keyring on reboot
-            systemctl mask -- "$cf_Mask_Units"
-            iterate_systemctl stop  "${cf_Stop_Units}"
-            iterate_systemctl stop  "${cf_Restart_Units}"; res=$?
+            # Stop, mask, and restart services according to the config file
+            iterate_systemctl stop "${cf_Stop_Units} ${cf_Restart_Units}"
+            iterate_systemctl mask "${cf_Stop_Units} ${cf_Mask_Units}"
             mount_all;                                     res+=$?
-            iterate_systemctl start "${cf_Restart_Units}"; res+=$?
+            iterate_systemctl start "${cf_Restart_Units}"
             exit "$res"
         ;;
         "unmount_all")
-            iterate_systemctl stop  "${cf_Restart_Units}"; res=$?
+            iterate_systemctl stop "${cf_Restart_Units}"
             unmount_all;                                   res+=$?
+            # Unmask, unstop, and restart services according to the config file
+            iterate_systemctl unmask "${cf_Stop_Units}" "${cf_Mask_Units}"
             if [[ $(systemctl is-system-running) != "stopping" ]]; then
-                iterate_systemctl start "${cf_Restart_Units}"; res+=$?
-                iterate_systemctl start "${cf_Stop_Units}";    res+=$?
+                iterate_systemctl start "${cf_Stop_Units}" "${cf_Restart_Units}"
             fi
-            systemctl unmask -- "$cf_Mask_Units"
             exit "$res"
         ;;
         "print_help")
