@@ -156,7 +156,7 @@ function perform_remove_all {
 }
 
 function add_to_bin {
-    local bin_dir="$Path_Install_Directory"
+    local bin_dir="$Install_Directory"
     if stat_service > /dev/null; then
         local reenable=true
         Log -p echo "Stopping $Name"
@@ -180,7 +180,7 @@ function add_to_bin {
 }
 
 function remove_from_bin {
-    local bin_dir="$Path_Install_Directory"
+    local bin_dir="$Install_Directory"
     local reenable=false
     if stat_service > /dev/null; then
         reenable=true
