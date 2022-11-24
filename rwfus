@@ -247,6 +247,7 @@ for operation in ${Operation:=$Default_Operation}; do
             fi
         ;;
         "stat_service"|"stat_disk")
+            config --load > /dev/null
             $operation
         ;;
         "print_help")
