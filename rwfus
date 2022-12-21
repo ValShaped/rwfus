@@ -42,7 +42,7 @@ load_defaults
 
 # Default operation
 Default_Operation="stat_service "
-
+# shellcheck disable=SC2317
 function print_help {
     cat <<EOF
 $Name v$Version
@@ -197,7 +197,6 @@ while true; do
             shift 2
             ;;
         -c|--config)
-            CONFIG_SOURCE="$2"
             config --load "$2"
             shift 2
             ;;
