@@ -126,7 +126,8 @@ function stat_service {
 }
 
 function list_service {
-    find "$cf_Service_Directory" -name "*.service" -printf "%f"
+    # Send error channel to the shadow realm
+    find "$cf_Service_Directory" -name "*.service" -printf "%f" 2> /dev/null
 }
 
 function service {
