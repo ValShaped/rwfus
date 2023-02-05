@@ -94,8 +94,9 @@ function iterate_systemctl {
     echo "$@"
     local operation="$1"
     shift
-    #shellcheck disable=2068 # please shut up about the globbing
-    for unit in $@; do
+    # Re-split the string
+    read -ra units <<< "$*"
+    for unit in "${units[@]}"; do
         if [[ "${operation}" =~ mask ]]; then
             systemctl "$operation" "$unit"
         else
