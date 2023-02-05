@@ -110,8 +110,8 @@ for operation in ${Operation:="print_help"}; do
     case "$operation" in
         "mount_all")
             # Stop, mask, and restart services according to the config file
-            iterate_systemctl stop "${cf_Stop_Units} ${cf_Restart_Units}"
-            iterate_systemctl mask "${cf_Stop_Units} ${cf_Mask_Units}"
+            iterate_systemctl stop "${cf_Stop_Units}" "${cf_Restart_Units}"
+            iterate_systemctl mask "${cf_Stop_Units}" "${cf_Mask_Units}"
             mount_all;                                     res+=$?
             iterate_systemctl start "${cf_Restart_Units}"
             exit "$res"

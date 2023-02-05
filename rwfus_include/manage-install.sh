@@ -178,6 +178,8 @@ function add_to_bin {
     Log -p echo "Unmasking and enabling usr-local.mount"
     Log Test systemctl unmask -- "usr-local.mount"
     Log Test systemctl enable --now -- "usr-local.mount"
+    # please shut up about the globbing
+    # shellcheck disable=2086
     if [ $reenable ]; then
         Log -p echo "Restarting $Name"
         enable_service
