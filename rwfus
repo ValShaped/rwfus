@@ -1,7 +1,7 @@
 #!/bin/bash
 : <<LICENSE
       rwfus: Rwfus - RW OverlayFS for Deck!
-    Copyright (C) 2022-2023 ValShaped (val@soft.fish)
+    Copyright (C) 2022 ValShaped (val@soft.fish)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -236,10 +236,14 @@ for operation in ${Operation:=$Default_Operation}; do
             config --load
             state=$(service_state)
             echo "$state"
-            if [[ "$state" =~ "active" ]]; then
-                disable_service
+            if [[ "$state" =~ "Active: active" ]]; then
+                service disable
                 $operation "$disk_path"
-                enable_service
+                case "$operation" in
+                    "backup_disk"|"restore_disk")
+                        service enable
+                    ;;
+                esac
             else
                 $operation "$disk_path"
             fi
