@@ -98,6 +98,12 @@ function mount_all {
         printf "Could not mount disk.\n"
         return 255;
     fi
+    # Check for the presence of glibc
+    # Glibc will cause the Deck to fail boot.
+    # FIXME: instead of looking for glibc, dynamically detect a failed boot
+    if [ -f "${cf_Upper_Directory}/usr/include/gnu/libc-version.h" ]; then
+        return 254;
+    fi
     for target in $cf_Directories; do
         local escaped; escaped=$(systemd-escape -p -- "$target")
         local lower="$target"
