@@ -107,7 +107,7 @@ function mount_all {
         \nIn an attempt to preserve your Deck, %s has not mounted any overlays.\
         \n\033[1mThis is not a bug. It is an intentional safety measure.\033[0m\
         \nThe disk, however, has remained mounted, in case you want to remedy this.\
-        \nYou may unmount it with \033[1m%s --umount\033[0m"\
+        \nYou may unmount it with \033[1m%s --umount\033[0m\n"\
         "${Name}" "${Name}" "${Name@L}"
         return 254;
     fi
