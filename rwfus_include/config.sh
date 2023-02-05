@@ -46,23 +46,37 @@ CF_DEFAULT=(
     #   /etc/pacman.d /var/lib/pacman /var/cache/pacman : store pacman state
     [cf_Directories]="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
     # Default directories (These can be changed in the config file. Run `rwfus --gen-config` to generate an example file.)
-    [cf_Base_Directory]="/opt/${Name@L}"         # Where all the files will go
-    [cf_Service_Directory]=""                    # Where generated service will go
-    [cf_Disk_Image_Path]=""                      # Where the disk image will go
-    [cf_Mount_Directory]=""                      # Where the disk image will be mounted
-    [cf_Upper_Directory]=""                      # Where the overlayfs upper dirs will go
-    [cf_Work_Directory]=""                       # Where the overlayfs work dirs will go
-    [cf_Disk_Image_Size]="8G"                    # Size to make the disk image, when resizing
+    #   Note: Items have been intentionally left blank.
+    #   See function change_base below.
+    #   Where all the files will go
+    [cf_Base_Directory]="/opt/${Name@L}"
+    #   Where generated service will go
+    [cf_Service_Directory]=""
+    #   Where the disk image will go
+    [cf_Disk_Image_Path]=""
+    #   Where the disk image will be mounted
+    [cf_Mount_Directory]=""
+    #   Where the overlayfs upper dirs will go
+    [cf_Upper_Directory]=""
+    #   Where the overlayfs work dirs will go
+    [cf_Work_Directory]=""
     # Systemd-related things
-    [cf_Systemd_Directory]="/etc/systemd/system" # Where systemd expects units to be
-    [cf_Restart_Units]="usr-local.mount"         # Units to restart when daemon starts
-    [cf_Stop_Units]="var-cache-pacman.mount"     # Units to stop when daemon starts and restart when daemon stops
-    [cf_Mask_Units]="pacman-cleanup.service"     # Units to mask when daemon starts and unmask when daemon stops.
+    #   Where systemd expects units to be
+    [cf_Systemd_Directory]="/etc/systemd/system"
+    #   Units to restart when daemon starts
+    [cf_Restart_Units]="usr-local.mount polkit.service"
+    #   Units to stop when daemon starts and restart when daemon stops
+    [cf_Stop_Units]="var-cache-pacman.mount"
+    # Units to mask when daemon starts and unmask when daemon stops.
+    [cf_Mask_Units]="pacman-cleanup.service"
+    # Disk-related things
+    #   Make sure you keep 'loop', so it creates a loop device
+    [cf_Mount_Options]="loop,compress"
+    # Size to make the disk image, when resizing
+    [cf_Disk_Image_Size]="8G"
 
-    [cf_Mount_Options]="loop,compress"   # Make sure you keep 'loop', so it creates a loop device
-
-    # # SteamOS Offload offloads /usr/local to /home/.steamos/offload/usr/local
-    # # Beware! This will be considered read-only to overlayfs, so adding stuff while rwfus is enabled is not recommended.
+    #   SteamOS Offload offloads /usr/local to /home/.steamos/offload/usr/local
+    #   Beware! This will be considered read-only to overlayfs, so adding stuff while rwfus is enabled is not recommended.
     [cf_Install_Directory]="/home/.steamos/offload/usr/local/bin"
 )
 
