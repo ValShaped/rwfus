@@ -1,2 +1,4 @@
 source-path=SCRIPTDIR/
 source-path=SCRIPTDIR/rwfus_include
+# Disable unassigned variable lint
+disable=2154
