@@ -102,6 +102,13 @@ function mount_all {
     # Glibc will cause the Deck to fail boot.
     # FIXME: instead of looking for glibc, dynamically detect a failed boot
     if [ -f "${cf_Upper_Directory}/usr/include/gnu/libc-version.h" ]; then
+        printf "GLibC has been installed inside %s's overlay.\
+        \nYour Deck will likely not survive a SteamOS update.\
+        \nIn an attempt to preserve your Deck, %s has not mounted any overlays.\
+        \n\033[1mThis is not a bug. It is an intentional safety measure.\033[0m\
+        \nThe disk, however, has remained mounted, in case you want to remedy this.\
+        \nYou may unmount it with \033[1m%s --umount\033[0m"\
+        "${Name}" "${Name}" "${Name@L}"
         return 254;
     fi
     for target in $cf_Directories; do
