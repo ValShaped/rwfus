@@ -2,7 +2,7 @@
 # shellcheck shell=bash
 : <<LICENSE
       config.sh: Rwfus
-    Copyright (C) 2022 ValShaped (val@soft.fish)
+    Copyright (C) 2022-2023 ValShaped (val@soft.fish)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
