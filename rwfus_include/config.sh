@@ -157,7 +157,7 @@ function construct_config {
         for cf_option in ${CF_SECTION[$section]}; do
             # Comment line
             #Variable         Value
-            printf "%b%-18s %-24s\n" \
+            printf "%b%-18s %-1s\n" \
                 "${CF_COMMENT[$cf_option]}" \
                 "${CF_REQUIRE[$cf_option]-"#"}${cf_option:3}" \
                 "${!cf_option}"
