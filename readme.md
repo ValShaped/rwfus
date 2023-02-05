@@ -24,6 +24,12 @@ Then you're all set! Remember to periodically run `pacman -Sy` to update your re
 
 Due to the way Valve's firmware updates work, doing `pacman -S[y[y]]u` at any time will lead to complications when the next firmware update is installed. I highly advise avoiding `-Su`, `-Syu`, and `-Syyu` altogether on a Steam Deck with read-only rootfs. It may lead to bad behavior.
 
+Rwfus is, right now, a proof of concept (hence the 0.x version number, and being written in Bash.)
+I made it to install a couple user-mode packages (nano-syntax-highlighting and yakuake specifically.)
+It is not production-ready software, and in using Rwfus, you accept that I am not liable if your Deck catches fire.
+
+Rwfus will allow you to install *any* package, but not everything will let your Deck survive an update. In particular, `glibc` will crash your Deck after an update, requiring the SteamOS recovery image and some knowledge of Linux and/or Rwfus' internals to fix.
+
 ### Usage:
 
 ```
