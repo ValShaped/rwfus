@@ -119,12 +119,12 @@ function load_defaults {
 # Derive subdirs of the cf_Base_Directory
 function change_base {
     # Subdirs of cf_Base_Directory
-    export cf_Service_Directory="$cf_Base_Directory/service"   # Where service will go
+    export cf_Service_Directory="$cf_Base_Directory/service"        # Where service will go
     export cf_Disk_Image_Path="$cf_Base_Directory/${Name@L}.btrfs"  # Where the disk image will go
-    export cf_Mount_Directory="$cf_Base_Directory/mount"       # Where the disk image will be mounted
+    export cf_Mount_Directory="$cf_Base_Directory/mount"            # Where the disk image will be mounted
     # Subdirs of cf_Mount_Directory
-    export cf_Upper_Directory="$cf_Mount_Directory/upper"      # Where the overlayfs upper dirs will go
-    export cf_Work_Directory="$cf_Mount_Directory/work"        # Where the overlayfs work dirs will go
+    export cf_Upper_Directory="$cf_Mount_Directory/upper"           # Where the overlayfs upper dirs will go
+    export cf_Work_Directory="$cf_Mount_Directory/work"             # Where the overlayfs work dirs will go
 }
 
 function enable_testmode {
