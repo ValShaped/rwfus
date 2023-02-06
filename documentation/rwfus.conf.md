@@ -1,43 +1,40 @@
 # /etc/opt/rwfus.conf
 
 ### Common
-| Field             | Explanation   | Default             |
-|-------------------|---------------|---------------------|
-| `Directories`       | Overlay paths | /usr /etc/pacman.d /var/lib/pacman /var/cache/pacman |
-| `Base_Directory`    | Install path  | /opt/rwfus          |
-
+| Field               | Explanation      | Default                                              |
+|---------------------|------------------|------------------------------------------------------|
+| `Directories`       | Overlay paths    | /usr /etc/pacman.d /var/lib/pacman /var/cache/pacman |
+| `Base_Directory`    | Install path     | /opt/rwfus                                           |
 ### Service
-| Field             | Explanation      | Default                |
-|-------------------|------------------|------------------------|
-`Stop_Units`          | Units to stop    | var-cache-pacman.mount |
-`Mask_Units`          | Units to mask    | pacman-cleanup.service |
-`Restart_Units`       | Units to restart | usr-local.mount polkit.service |
-
+| Field               | Explanation      | Default                                              |
+|---------------------|------------------|------------------------------------------------------|
+| `Stop_Units`        | Units to stop    | var-cache-pacman.mount                               |
+| `Mask_Units`        | Units to mask    | pacman-cleanup.service                               |
+| `Restart_Units`     | Units to restart | usr-local.mount polkit.service                       |
 ### Overlay
-| Field             | Explanation                | Default                |
-|-------------------|----------------------------|------------------------|
-| `Upper_Directory`   | Source for overlay's files | /opt/rwfus/mount/upper |
-| `Work_Directory`    | OverlayFS requires space for temporary files | /opt/rwfus/mount/work |
+| Field               | Explanation                                  | Default                  |
+|---------------------|----------------------------------------------|--------------------------|
+| `Upper_Directory`   | Source for overlay's files                   | /opt/rwfus/mount/upper   |
+| `Work_Directory`    | OverlayFS requires space for temporary files | /opt/rwfus/mount/work    |
 ### Disk
-| Field             | Explanation             | Default                |
-|-------------------|-------------------------|------------------------|
-| `Mount_Options`     | Btrfs mount options     | loop,compress          |
-| `Mount_Directory`   | Path to mount disk into | /opt/rwfus/mount
-| `Disk_Image_Path`   | Path to disk image      | /opt/rwfus/rwfus.btrfs |
-| `Disk_Image_Size`   | Maximum size of image   | 8G                     |
-
+| Field               | Explanation                  | Default                                  |
+|---------------------|------------------------------|------------------------------------------|
+| `Mount_Options`     | Btrfs mount options          | loop,compress                            |
+| `Mount_Directory`   | Path to mount disk into      | /opt/rwfus/mount                         |
+| `Disk_Image_Path`   | Path to disk image           | /opt/rwfus/rwfus.btrfs                   |
+| `Disk_Image_Size`   | Maximum size of image        | 8G                                       |
 ### Configurator
-| Field             | Explanation                  | Default             |
-|-------------------|------------------------------|---------------------|
-| `Systemd_Directory` | Systemd units go here        | /etc/systemd/system |
-| `Service_Directory` | `rwfusd` script goes here    | /opt/rwfus/service  |
-| `Install_Directory` | Where `rwfus -I` installs to | /home/.steamos/offload/usr/local/bin |
-| `Logfile`           | Log file path                | /var/log/rwfus.log  |
+| Field               | Explanation                  | Default                                  |
+|---------------------|------------------------------|------------------------------------------|
+| `Systemd_Directory` | Systemd units go here        | /etc/systemd/system                      |
+| `Service_Directory` | `rwfusd` script goes here    | /opt/rwfus/service                       |
+| `Install_Directory` | Where `rwfus -I` installs to | /home/.steamos/offload/usr/local/bin     |
+| `Logfile`           | Log file path                | /var/log/rwfus.log                       |
 
-### Additional Configuration
-| Field             | Type          | Default             | Reason not included in config file |
-|-------------------|---------------|---------------------|--------
-| `Config_File`       | Config path   | /etc/opt/rwfus.conf | Can't find config file if this option is changed. |
+# Additional Configuration
+| Field         | Type        | Default             | Reason not included in config file                |
+|---------------|-------------|---------------------|---------------------------------------------------|
+| `Config_File` | Config path | /etc/opt/rwfus.conf | Can't find config file if this option is changed. |
 
 
 # Examples
