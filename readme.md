@@ -33,8 +33,11 @@ Rwfus will allow you to install *any* package, but not everything will let your 
 ### Usage:
 
 ```
+Rwfus v0.4.1
+Carry Pacman across SteamOS updates!
+
 USAGE:
-    /usr/local/bin/rwfus [FLAGS] [OPTIONS] [--] [DIRECTORY]...
+    ./rwfus [FLAGS] [OPTIONS]
 
 FLAGS:
     -h, --help          Show this help text, then exit
@@ -51,7 +54,7 @@ FLAGS:
         --mount*        Mount Rwfus's disk image
         --umount*       Unmount Rwfus's disk image
 
-    -I, --install-bin*  Put /usr/local/bin/rwfus into a [...]/usr/local/bin folder
+    -I, --install-bin*  Put ./rwfus into a [...]/usr/local/bin folder
     -R, --remove-bin*   Remove Rwfus from a [...]/usr/local/bin folder
 
     -t, --test          Use fake directory targets when performing operations
@@ -61,7 +64,7 @@ FLAGS:
 
     OPTIONS:
     -l, --logfile <path>    Specify the location of Rwfus's log file
-                                Default: /tmp/rwfus.XXXX.log (where X is random)
+                                Default: /var/log/rwfus.log (where X is random)
     -c, --config <path>     Specify a configuration file to use
                                 Default: /opt/rwfus/
         --backup <dest>*    Backup Rwfus's disk image to (file path) <dest>

@@ -49,7 +49,7 @@ $Name v$Version
 $Description
 
 USAGE:
-    $0 [FLAGS] [OPTIONS] [--] [DIRECTORY]...
+    $0 [FLAGS] [OPTIONS]
 
 FLAGS:
     -h, --help          Show this help text, then exit
