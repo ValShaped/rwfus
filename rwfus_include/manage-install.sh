@@ -57,7 +57,8 @@ function perform_install {
 
     # generate dirs
     Log -p echo "1. Creating directories..."
-    Log mkdir -vp "$cf_Base_Directory" "$cf_Service_Directory" "$cf_Mount_Directory"
+    Log mkdir -vp "$cf_Base_Directory" "$cf_Service_Directory"
+    Log mkdir -vp "$cf_Mount_Directory" "$(dirname "$cf_Disk_Image_Path")"
 
     # generate disk
     if [[ -f $cf_Disk_Image_Path ]]; then

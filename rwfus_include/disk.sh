@@ -23,6 +23,13 @@ LICENSE
 source "$IncludeDir/testlog.sh"
 
 function mount_disk {
+    # Wait up to 3 seconds!!? for disk to become available
+    for _i in {1..3}; do
+        if [ ! -f "$cf_Disk_Image_Path" ]
+        then sleep 1
+        else break
+        fi
+    done
     # Set mount options, if none are specified
     mount -vo "${cf_Mount_Options:=loop}" -- "$cf_Disk_Image_Path" "$cf_Mount_Directory" && \
     btrfs filesystem resize max "$cf_Mount_Directory"
