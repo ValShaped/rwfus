@@ -1,7 +1,7 @@
 ## Rwfus: Read-Write OverlayFS for your Steam Deck!
 ---
 
-Like a vinyl couch cover for your filesystem, Rwfus covers your Deck's /usr/ directory (and some others) allowing you to initialize and use pacman (the Arch Linux package manager) on the Steam Deck without losing packages when the next update comes out.
+Like a vinyl couch cover for your filesystem, Rwfus covers your Deck's /usr/ directory (and some others) allowing you to initialize and use* pacman (the Arch Linux package manager) on the Steam Deck without losing packages when the next update comes out.
 
 Directories covered in a default installation:
 | Directory         | Contents               |
@@ -11,7 +11,7 @@ Directories covered in a default installation:
 | /var/cache/pacman | Package cache          |
 | /var/lib/pacman   | Package metadata       |
 
-### Jank warning
+### * Jank warning
 
 Due to the way Valve's firmware updates work, doing `pacman -S[y[y]]u` at any time will lead to complications when the next firmware update is installed. I highly advise avoiding `-Su`, `-Syu`, and `-Syyu` altogether on a Steam Deck with read-only rootfs. It may lead to bad behavior.
 
