@@ -236,7 +236,7 @@ for operation in ${Operation:=$Default_Operation}; do
             config --load
             state=$(service_state)
             echo "$state"
-            if [[ "$state" =~ "Active: active" ]]; then
+            if [[ "$state" == "active"* ]]; then
                 service disable
                 $operation "$disk_path"
                 case "$operation" in
