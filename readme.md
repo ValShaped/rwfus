@@ -71,10 +71,6 @@ FLAGS:
         --restore <src>*    Restore Rwfus's disk image from (file path) <src>
 
     * options marked with a star require root, unless the --test flag is set.
-
-ARGS:
-    <DIRECTORY>...          List of directories to create overlays for
-                                Defaults: /usr /etc/pacman.d /var/lib/pacman /var/cache/pacman
 ```
 
 #### Examples:

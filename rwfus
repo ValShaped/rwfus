@@ -83,10 +83,6 @@ FLAGS:
         --restore <src>*    Restore $Name's disk image from (file path) <src>
 
     * options marked with a star require root, unless the --test flag is set.
-
-ARGS:
-    <DIRECTORY>...          List of directories to create overlays for
-                                Defaults: $cf_Directories
 EOF
 }
 
