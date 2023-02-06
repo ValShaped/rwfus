@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/false
+#shellcheck shell=bash
 : <<LICENSE
       service.sh: Rwfus
     Copyright (C) 2022-2023 ValShaped (val@soft.fish)

@@ -1,3 +1,4 @@
+#!/bin/false
 # shellcheck shell=bash
 : <<LICENSE
       disk.sh: Rwfus

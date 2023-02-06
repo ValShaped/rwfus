@@ -1,3 +1,4 @@
+#!/bin/false
 # shellcheck shell=bash
 : <<LICENSE
       manage-install.sh: Rwfus
