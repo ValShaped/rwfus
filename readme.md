@@ -4,21 +4,12 @@
 Like a vinyl couch cover for your filesystem, Rwfus covers your Deck's /usr/ directory (and some others) allowing you to initialize and use pacman (the Arch Linux package manager) on the Steam Deck without losing packages when the next update comes out.
 
 Directories covered in a default installation:
-Directory         | Contents
----               | ---
-/etc/pacman.d     | `pacman` configuration
-/usr              | Programs and libraries
-/var/cache/pacman | Package cache
-/var/lib/pacman   | Package metadata
-
-
-### Installation:
-
-1. `git clone https://github.com/ValShaped/rwfus.git`
-2. `cd rwfus`
-3. `./rwfus -iI`
-
-Then you're all set! Remember to periodically run `pacman -Sy` to update your repos
+| Directory         | Contents               |
+| ----------------- | ---------------------- |
+| /etc/pacman.d     | `pacman` configuration |
+| /usr              | Programs and libraries |
+| /var/cache/pacman | Package cache          |
+| /var/lib/pacman   | Package metadata       |
 
 ### Jank warning
 
@@ -29,6 +20,14 @@ I made it to install a couple user-mode packages (nano-syntax-highlighting and y
 It is not production-ready software, and in using Rwfus, you accept that I am not liable if your Deck catches fire.
 
 Rwfus will allow you to install *any* package, but not everything will let your Deck survive an update. In particular, `glibc` will crash your Deck after an update, requiring the SteamOS recovery image and some knowledge of Linux and/or Rwfus' internals to fix.
+
+### Installation:
+
+1. `git clone https://github.com/ValShaped/rwfus.git`
+2. `cd rwfus`
+3. `./rwfus -iI`
+
+Then you're all set! Remember to periodically run `pacman -Sy` to update your repos
 
 ### Usage:
 
