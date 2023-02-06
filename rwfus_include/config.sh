@@ -122,6 +122,9 @@ CF_TESTPATHS="cf_Base_Directory cf_Service_Directory cf_Mount_Directory
               cf_Upper_Directory cf_Work_Directory cf_Install_Directory
               cf_Systemd_Directory cf_Disk_Image_Path cf_Config_File cf_Logfile"
 
+# shellcheck disable=SC2034
+CF_CONFIGURATIOR=true
+
 # This function loads the default config. Run `rwfus --gen-config` to generate an example file.
 function load_defaults {
     for cf_option in "${!CF_DEFAULT[@]}"; do
@@ -204,10 +207,11 @@ function load_config {
         # also filter lines which don't contain any non-space characters.
         local expression='^[[:space:]]*[^\[\#[:space:]]+'
         if [[ "$var" =~ $expression ]]; then
-            CF_REQUIRE["$var"]=true                  # Save the loaded option
-            val="$(echo "$val" | cut -f1 -d# | xargs)" # chop off inline comments
             local cf_var="cf_$var"
-            CF_REQUIRE["$cf_var"]="" # Mark option loaded
+            if [ "$CF_CONFIGURATOR" ]; then
+                CF_REQUIRE["$cf_var"]=""               # Save the loaded option
+            fi
+            val="$(echo "$val" | cut -f1 -d# | xargs)" # chop off inline comments
             export "$cf_var"="${val}"
             printf "> %s: \"%s\"\n" "$var" "${!cf_var}"
             if [[ "$cf_var" = "cf_Base_Directory" ]]; then
@@ -220,7 +224,6 @@ function load_config {
     done < "$config_file"
     CONFIG_LOADED=true
     if [ "$TESTMODE" ]; then enable_testmode ./test; fi
-    echo
 }
 
 function config {
