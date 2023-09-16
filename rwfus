@@ -49,7 +49,7 @@ $Name v$Version
 $Description
 
 USAGE:
-    $0 [FLAGS] [OPTIONS] [--] [DIRECTORY]...
+    $0 [FLAGS] [OPTIONS]
 
 FLAGS:
     -h, --help          Show this help text, then exit
@@ -83,10 +83,6 @@ FLAGS:
         --restore <src>*    Restore $Name's disk image from (file path) <src>
 
     * options marked with a star require root, unless the --test flag is set.
-
-ARGS:
-    <DIRECTORY>...          List of directories to create overlays for
-                                Defaults: $cf_Directories
 EOF
 }
 
@@ -236,10 +232,14 @@ for operation in ${Operation:=$Default_Operation}; do
             config --load
             state=$(service_state)
             echo "$state"
-            if [[ "$state" =~ "active" ]]; then
-                disable_service
+            if [[ "$state" == "active"* ]]; then
+                service disable
                 $operation "$disk_path"
-                enable_service
+                case "$operation" in
+                    "backup_disk"|"restore_disk")
+                        service enable
+                    ;;
+                esac
             else
                 $operation "$disk_path"
             fi

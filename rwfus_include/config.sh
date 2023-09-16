@@ -2,7 +2,7 @@
 # shellcheck shell=bash
 : <<LICENSE
       config.sh: Rwfus
-    Copyright (C) 2022 ValShaped (val@soft.fish)
+    Copyright (C) 2022-2023 ValShaped (val@soft.fish)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -46,23 +46,38 @@ CF_DEFAULT=(
     #   /etc/pacman.d /var/lib/pacman /var/cache/pacman : store pacman state
     [cf_Directories]="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
     # Default directories (These can be changed in the config file. Run `rwfus --gen-config` to generate an example file.)
-    [cf_Base_Directory]="/opt/${Name@L}"         # Where all the files will go
-    [cf_Service_Directory]=""                    # Where generated service will go
-    [cf_Disk_Image_Path]=""                      # Where the disk image will go
-    [cf_Mount_Directory]=""                      # Where the disk image will be mounted
-    [cf_Upper_Directory]=""                      # Where the overlayfs upper dirs will go
-    [cf_Work_Directory]=""                       # Where the overlayfs work dirs will go
-    [cf_Disk_Image_Size]="8G"                    # Size to make the disk image, when resizing
+    #   Note: Items have been intentionally left blank.
+    #   See function change_base below.
+    #   Where all the files will go
+    [cf_Base_Directory]="/opt/${Name@L}"
+    #   Where generated service will go
+    [cf_Service_Directory]=""
+    #   Where the disk image will go
+    [cf_Disk_Image_Path]=""
+    #   Where the disk image will be mounted
+    [cf_Mount_Directory]=""
+    #   Where the overlayfs upper dirs will go
+    [cf_Upper_Directory]=""
+    #   Where the overlayfs work dirs will go
+    [cf_Work_Directory]=""
     # Systemd-related things
-    [cf_Systemd_Directory]="/etc/systemd/system" # Where systemd expects units to be
-    [cf_Restart_Units]="usr-local.mount"         # Units to restart when daemon starts
-    [cf_Stop_Units]="var-cache-pacman.mount"     # Units to stop when daemon starts and restart when daemon stops
-    [cf_Mask_Units]="pacman-cleanup.service"     # Units to mask when daemon starts and unmask when daemon stops.
+    #   Where systemd expects units to be
+    [cf_Systemd_Directory]="/etc/systemd/system"
+    #   Units to restart when daemon starts
+    [cf_Restart_Units]="usr-local.mount polkit.service"
+    #   Units to stop when daemon starts and restart when daemon stops
+    [cf_Stop_Units]="var-cache-pacman.mount"
+    # Units to mask when daemon starts and unmask when daemon stops.
+    [cf_Mask_Units]="pacman-cleanup.service"
+    # Disk-related things
+    #   Make sure you keep 'loop', so it creates a loop device
+    [cf_Mount_Options]="loop,compress"
+    # Size to make the disk image, when resizing
+    [cf_Disk_Image_Size]="8G"
 
-    [cf_Mount_Options]="loop,compress"   # Make sure you keep 'loop', so it creates a loop device
+    #   SteamOS Offload offloads /usr/local to /home/.steamos/offload/usr/local
+    #   Beware! This will be considered read-only to overlayfs, so adding stuff while rwfus is enabled is not recommended.
 
-    # # SteamOS Offload offloads /usr/local to /home/.steamos/offload/usr/local
-    # # Beware! This will be considered read-only to overlayfs, so adding stuff while rwfus is enabled is not recommended.
     [cf_Install_Directory]="/home/.steamos/offload/usr/local/bin"
 )
 
@@ -108,6 +123,9 @@ CF_TESTPATHS="cf_Base_Directory cf_Service_Directory cf_Mount_Directory
               cf_Upper_Directory cf_Work_Directory cf_Install_Directory
               cf_Systemd_Directory cf_Disk_Image_Path cf_Config_File cf_Logfile"
 
+# shellcheck disable=SC2034
+CF_CONFIGURATIOR=true
+
 # This function loads the default config. Run `rwfus --gen-config` to generate an example file.
 function load_defaults {
     for cf_option in "${!CF_DEFAULT[@]}"; do
@@ -119,12 +137,12 @@ function load_defaults {
 # Derive subdirs of the cf_Base_Directory
 function change_base {
     # Subdirs of cf_Base_Directory
-    export cf_Service_Directory="$cf_Base_Directory/service"   # Where service will go
+    export cf_Service_Directory="$cf_Base_Directory/service"        # Where service will go
     export cf_Disk_Image_Path="$cf_Base_Directory/${Name@L}.btrfs"  # Where the disk image will go
-    export cf_Mount_Directory="$cf_Base_Directory/mount"       # Where the disk image will be mounted
+    export cf_Mount_Directory="$cf_Base_Directory/mount"            # Where the disk image will be mounted
     # Subdirs of cf_Mount_Directory
-    export cf_Upper_Directory="$cf_Mount_Directory/upper"      # Where the overlayfs upper dirs will go
-    export cf_Work_Directory="$cf_Mount_Directory/work"        # Where the overlayfs work dirs will go
+    export cf_Upper_Directory="$cf_Mount_Directory/upper"           # Where the overlayfs upper dirs will go
+    export cf_Work_Directory="$cf_Mount_Directory/work"             # Where the overlayfs work dirs will go
 }
 
 function enable_testmode {
@@ -157,7 +175,7 @@ function construct_config {
         for cf_option in ${CF_SECTION[$section]}; do
             # Comment line
             #Variable         Value
-            printf "%b%-18s %-24s\n" \
+            printf "%b%-18s %-1s\n" \
                 "${CF_COMMENT[$cf_option]}" \
                 "${CF_REQUIRE[$cf_option]-"#"}${cf_option:3}" \
                 "${!cf_option}"
@@ -190,10 +208,11 @@ function load_config {
         # also filter lines which don't contain any non-space characters.
         local expression='^[[:space:]]*[^\[\#[:space:]]+'
         if [[ "$var" =~ $expression ]]; then
-            CF_REQUIRE["$var"]=true                  # Save the loaded option
-            val="$(echo "$val" | cut -f1 -d# | xargs)" # chop off inline comments
             local cf_var="cf_$var"
-            CF_REQUIRE["$cf_var"]="" # Mark option loaded
+            if [ "$CF_CONFIGURATOR" ]; then
+                CF_REQUIRE["$cf_var"]=""               # Save the loaded option
+            fi
+            val="$(echo "$val" | cut -f1 -d# | xargs)" # chop off inline comments
             export "$cf_var"="${val}"
             printf "> %s: \"%s\"\n" "$var" "${!cf_var}"
             if [[ "$cf_var" = "cf_Base_Directory" ]]; then
@@ -206,7 +225,6 @@ function load_config {
     done < "$config_file"
     CONFIG_LOADED=true
     if [ "$TESTMODE" ]; then enable_testmode ./test; fi
-    echo
 }
 
 function config {

@@ -1,7 +1,8 @@
+#!/bin/false
 # shellcheck shell=bash
 : <<LICENSE
       manage-install.sh: Rwfus
-    Copyright (C) 2022 ValShaped (val@soft.fish)
+    Copyright (C) 2022-2023 ValShaped (val@soft.fish)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -47,12 +48,17 @@ function perform_install {
     Log -p echo "Creating overlays for $cf_Directories:"
 
     if list_service > /dev/null; then
+        Log -p echo "0. Disabling service"
+        config load
         service disable "$cf_Service_Directory"
+        Log echo "# It's okay if unmounting fails here #"
+        Log Test unmount_all
     fi
 
     # generate dirs
     Log -p echo "1. Creating directories..."
-    Log mkdir -vp "$cf_Base_Directory" "$cf_Service_Directory" "$cf_Mount_Directory"
+    Log mkdir -vp "$cf_Base_Directory" "$cf_Service_Directory"
+    Log mkdir -vp "$cf_Mount_Directory" "$(dirname "$cf_Disk_Image_Path")"
 
     # generate disk
     if [[ -f $cf_Disk_Image_Path ]]; then
@@ -94,6 +100,8 @@ function perform_update {
     # disable units
     Log -p echo "1. Disabling service"
     service disable "$cf_Service_Directory"
+    Log echo "# It's okay if unmounting fails here #"
+    Log Test unmount_all
 
     # delete units
     Log -p echo "2. Removing service"
@@ -114,7 +122,7 @@ function perform_update {
 
     # enable units
     Log -p echo "6. Enabling service"
-    enable_service "$cf_Service_Directory"
+    service enable "$cf_Service_Directory"
     Log -p echo -e "Done!\n"
 }
 
@@ -147,7 +155,9 @@ function perform_remove_all {
 
     # disable units
     Log -p echo "1. Disabling units"
-    disable_service "$cf_Service_Directory"
+    service disable "$cf_Service_Directory"
+    Log echo "# It's okay if unmounting fails here #"
+    Log Test unmount_all
 
     Log -p echo "2. Removing units"
     remove_service "$cf_Service_Directory"
@@ -167,7 +177,9 @@ function add_to_bin {
     if stat_service > /dev/null; then
         local reenable=true
         Log -p echo "Stopping $Name"
-        disable_service
+        service disable
+        Log echo "# It's okay if unmounting fails here #"
+        Log Test unmount_all
     fi
     Log -p echo "Adding $Name to $bin_dir"
     # Move sources to the bin dir
@@ -178,9 +190,11 @@ function add_to_bin {
     Log -p echo "Unmasking and enabling usr-local.mount"
     Log Test systemctl unmask -- "usr-local.mount"
     Log Test systemctl enable --now -- "usr-local.mount"
+    # please shut up about the globbing
+    # shellcheck disable=2086
     if [ $reenable ]; then
         Log -p echo "Restarting $Name"
-        enable_service
+        service enable
     fi
 
     Log -p echo -e "Done!\n"
@@ -192,7 +206,9 @@ function remove_from_bin {
     if stat_service > /dev/null; then
         reenable=true
         Log -p echo "Stopping $Name"
-        disable_service
+        service disable
+        Log echo "# It's okay if unmounting fails here #"
+        Log Test unmount_all
     fi
     Log -p echo "Removing $Name from $bin_dir"
     if (Log rm -vr "$bin_dir/rwfus_include" && Log rm -v  "$bin_dir/$(basename "$0")"); then
@@ -203,7 +219,7 @@ function remove_from_bin {
 
     if $reenable; then
         Log -p echo "Restarting $Name"
-        enable_service
+        service enable
     fi
     Log -p echo -e "Done!\n"
 }

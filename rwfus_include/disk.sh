@@ -1,7 +1,8 @@
+#!/bin/false
 # shellcheck shell=bash
 : <<LICENSE
       disk.sh: Rwfus
-    Copyright (C) 2022 ValShaped (val@soft.fish)
+    Copyright (C) 2022-2023 ValShaped (val@soft.fish)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -22,6 +23,13 @@ LICENSE
 source "$IncludeDir/testlog.sh"
 
 function mount_disk {
+    # Wait up to 3 seconds!!? for disk to become available
+    for _i in {1..3}; do
+        if [ ! -f "$cf_Disk_Image_Path" ]
+        then sleep 1
+        else break
+        fi
+    done
     # Set mount options, if none are specified
     mount -vo "${cf_Mount_Options:=loop}" -- "$cf_Disk_Image_Path" "$cf_Mount_Directory" && \
     btrfs filesystem resize max "$cf_Mount_Directory"
@@ -97,6 +105,19 @@ function mount_all {
      if ! mount_disk; then
         printf "Could not mount disk.\n"
         return 255;
+    fi
+    # Check for the presence of glibc
+    # Glibc will cause the Deck to fail boot.
+    # FIXME: instead of looking for glibc, dynamically detect a failed boot
+    if [ -f "${cf_Upper_Directory}/usr/include/gnu/libc-version.h" ]; then
+        printf "GLibC has been installed inside %s's overlay.\
+        \nYour Deck will likely not survive a SteamOS update.\
+        \nIn an attempt to preserve your Deck, %s has not mounted any overlays.\
+        \n\033[1mThis is not a bug. It is an intentional safety measure.\033[0m\
+        \nThe disk, however, has remained mounted, in case you want to remedy this.\
+        \nYou may unmount it with \033[1m%s --umount\033[0m\n"\
+        "${Name}" "${Name}" "${Name@L}"
+        return 254;
     fi
     for target in $cf_Directories; do
         local escaped; escaped=$(systemd-escape -p -- "$target")

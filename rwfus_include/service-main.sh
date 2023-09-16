@@ -1,7 +1,8 @@
+#!/bin/false
 # shellcheck shell=bash
 : <<LICENSE
       Rwfus
-    Copyright (C) 2022 ValShaped (val@soft.fish)
+    Copyright (C) 2022-2023 ValShaped (val@soft.fish)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -94,8 +95,9 @@ function iterate_systemctl {
     echo "$@"
     local operation="$1"
     shift
-    #shellcheck disable=2068 # please shut up about the globbing
-    for unit in $@; do
+    # Re-split the string
+    read -ra units <<< "$*"
+    for unit in "${units[@]}"; do
         if [[ "${operation}" =~ mask ]]; then
             systemctl "$operation" "$unit"
         else
@@ -109,8 +111,8 @@ for operation in ${Operation:="print_help"}; do
     case "$operation" in
         "mount_all")
             # Stop, mask, and restart services according to the config file
-            iterate_systemctl stop "${cf_Stop_Units} ${cf_Restart_Units}"
-            iterate_systemctl mask "${cf_Stop_Units} ${cf_Mask_Units}"
+            iterate_systemctl stop "${cf_Stop_Units}" "${cf_Restart_Units}"
+            iterate_systemctl mask "${cf_Stop_Units}" "${cf_Mask_Units}"
             mount_all;                                     res+=$?
             iterate_systemctl start "${cf_Restart_Units}"
             exit "$res"
