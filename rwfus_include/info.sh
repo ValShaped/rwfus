@@ -3,4 +3,4 @@
 export Name="Rwfus"
 export Description="Carry Pacman across SteamOS updates!"
 export Repository="https://github.com/ValShaped/rwfus"
-export Version="0.4.1"
+export Version="0.4.2"
