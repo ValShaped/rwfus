@@ -77,6 +77,7 @@ CF_DEFAULT=(
 
     #   SteamOS Offload offloads /usr/local to /home/.steamos/offload/usr/local
     #   Beware! This will be considered read-only to overlayfs, so adding stuff while rwfus is enabled is not recommended.
+
     [cf_Install_Directory]="/home/.steamos/offload/usr/local/bin"
 )
 
