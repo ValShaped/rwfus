@@ -87,6 +87,12 @@ function update_disk_image {
         local escaped_dir; escaped_dir=$(systemd-escape -p -- "$dir")
         Log mkdir -pv -- "${cf_Upper_Directory}/${escaped_dir}" "${cf_Work_Directory}/${escaped_dir}"
     done
+    #? SteamOS 3.5 migration: Pacman DB location has been moved from /var/lib/pacman to /usr/lib/holo/pacmandb
+    if [[ -d "$cf_Upper_Directory/usr" && -d "$cf_Upper_Directory/var-lib-pacman" ]]; then
+        Target="${cf_Upper_Directory}/usr/lib/holo/pacmandb"
+        Log mkdir -pv -- "${Target}"
+        Log mv -- "$cf_Upper_Directory/var-lib-pacman/"* $Target
+    fi
     Log Test unmount_disk
 }
 
