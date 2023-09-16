@@ -29,7 +29,7 @@ CF_SECTION_ORDER="Common Service Overlay Disk Configurator"
 
 # Config file sections and their constituent options
 CF_SECTION=(
-    [Common]="cf_Base_Directory cf_Directories"
+    [Common]="cf_Version cf_Base_Directory cf_Directories"
     [Service]="cf_Stop_Units cf_Mask_Units cf_Restart_Units"
     [Overlay]="cf_Upper_Directory cf_Work_Directory"
     [Disk]="cf_Mount_Options cf_Mount_Directory cf_Disk_Image_Path cf_Disk_Image_Size"
@@ -38,13 +38,15 @@ CF_SECTION=(
 
 # Default configuration
 CF_DEFAULT=(
+    # The config file version
+    [cf_Version]="$Version"
     # Default paths
     [cf_Logfile]="/var/log/${Name@L}.log"
     [cf_Config_File]="/etc/opt/${Name@L}.conf"
     # Default Overlay list
     #   /usr : contains /usr/bin, /usr/lib; popular install locations. On path.
-    #   /etc/pacman.d /var/lib/pacman /var/cache/pacman : store pacman state
-    [cf_Directories]="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
+    #   /etc/pacman.d /usr/lib/holo/pacmandb /var/cache/pacman : store pacman state
+    [cf_Directories]="/usr /etc/pacman.d /var/cache/pacman"
     # Default directories (These can be changed in the config file. Run `rwfus --gen-config` to generate an example file.)
     #   Note: Items have been intentionally left blank.
     #   See function change_base below.
@@ -84,6 +86,7 @@ CF_DEFAULT=(
 # Comments embedded in the config file
 CF_COMMENT=(
     # Config file comments
+    [cf_Version]="# The config file format version\n"
     [cf_Logfile]="# The path to the logfile\n"
     [cf_Config_File]="# The path to the config file\n"
     [cf_Directories]=""
@@ -102,7 +105,7 @@ CF_COMMENT=(
     [cf_Install_Directory]=""
 
     [cf_Section_Common]=""
-    [cf_Section_Service]="\\n# Units to [Stop|Mask|Restart] while ${Name} is running"
+    [cf_Section_Service]="\\n# Units to [Stop|Mask|Restart] while ${Name} is mounting"
     [cf_Section_Overlay]="\\n# Where the overlayfs upperdirs and lowerdirs go"
     [cf_Section_Disk]=""
     [cf_Section_Configurator]=""
@@ -110,6 +113,7 @@ CF_COMMENT=(
 
 #Config options that should always be present in the file
 CF_REQUIRE=(
+    [cf_Version]=""
     [cf_Directories]=""
     [cf_Base_Directory]=""
     [cf_Systemd_Directory]=""
@@ -203,6 +207,7 @@ function load_config {
         echo "$config_file not found"
         return 254
     fi
+    cf_Version="" # Reset the version flag -- that absolutely shouldn't be kept default.
     while read -r var val; do
         # filter lines which start with (some whitespace and) a hash sign or square bracket; those are comments.
         # also filter lines which don't contain any non-space characters.
@@ -227,14 +232,33 @@ function load_config {
     if [ "$TESTMODE" ]; then enable_testmode ./test; fi
 }
 
+function migrate_config {
+    if [[ $cf_Version != $Version ]]; then
+        echo Changing "'Directories'"
+        echo "-${cf_Directories}"
+        cf_Directories="${cf_Directories/\/var\/lib\/pacman}"
+        cf_Directories="${cf_Directories//  / }"
+        echo "+${cf_Directories}"
+
+        cf_Version="${Version}"
+        save_config "$1"
+    fi
+}
+
 function config {
     local config_file="${2:-$cf_Config_File}"
     case "$1" in
-        -l|--load)
+        d|default)
+            load_defaults
+        ;;
+        l|load)
             load_config "$config_file"
         ;;
-        -s|--store)
+        s|store)
             save_config "$config_file"
+        ;;
+        m|migrate)
+            migrate_config "$config_file"
         ;;
         *)
             return 127
