@@ -38,7 +38,7 @@ source "$IncludeDir/manage-install.sh" # Installation management
 source "$IncludeDir/config.sh"         # Configuration files
 
 # Load the default configuration.
-load_defaults
+config default
 
 # Default operation
 Default_Operation="stat_service "
@@ -114,11 +114,11 @@ while true; do
             shift
             ;;
         -u|--update)
-            Operation+="perform_update "
+            Operation+="perform_install "
             shift
             ;;
         -r|--remove)
-            Operation+="perform_remove_all "
+            Operation+="perform_remove "
             shift
             ;;
     # Enablement control operations
@@ -161,7 +161,7 @@ while true; do
     # Sample generators
         -g|--gen-config)
             sample_fullpath="$caller_dir/${Name@L}.conf"
-            config --store "$sample_fullpath"
+            config store "$sample_fullpath"
             echo "Wrote config to $sample_fullpath"
             exit 0
             ;;
@@ -193,7 +193,7 @@ while true; do
             shift 2
             ;;
         -c|--config)
-            config --load "$2"
+            config load "$2"
             shift 2
             ;;
 
@@ -219,17 +219,17 @@ function initialize_log {
 
 for operation in ${Operation:=$Default_Operation}; do
     case "$operation" in
-        "perform_install"|"perform_update"|"perform_remove_all"|\
+        "perform_install"|"perform_remove"|\
         "add_to_bin"|"remove_from_bin"|\
         "enable_service"|"disable_service")
             check_permissions
             initialize_log
-            Log config --load
+            Log config load
             $operation "$@"
         ;;
         "mount_disk"|"unmount_disk"|"backup_disk"|"restore_disk")
             check_permissions
-            config --load
+            config load
             state=$(service_state)
             echo "$state"
             if [[ "$state" == "active"* ]]; then
@@ -245,7 +245,7 @@ for operation in ${Operation:=$Default_Operation}; do
             fi
         ;;
         "stat_service"|"stat_disk")
-            config --load > /dev/null
+            config load > /dev/null
             $operation
         ;;
         "print_help")

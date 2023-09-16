@@ -24,13 +24,21 @@ LICENSE
 source "$IncludeDir/service.sh"
 source "$IncludeDir/disk.sh"
 source "$IncludeDir/testlog.sh"
+source "$IncludeDir/config.sh"
 
-function generate_ovfs_dirs {
-    local dir_list="$*"
-    for dir in $dir_list; do
-        local escaped_dir
-        escaped_dir="$(systemd-escape -p -- "$dir")"
-        Log Test mkdir -pv "${cf_Upper_Directory}/${escaped_dir}" "${cf_Work_Directory}/${escaped_dir}"
+function confirm {
+    local confirmed
+    while [ ! "$confirmed" ]; do
+        local input
+        read -rp "$* [y|N] " input
+        case $input in
+            Y*|y*)
+                confirmed="yes"
+            ;;
+            N*|n*|"")
+                exit 0;
+            ;;
+        esac
     done
 }
 
@@ -45,12 +53,16 @@ function setup_pacman {
 }
 
 function perform_install {
+    #? SteamOS 3.5 migration: modify config
+    Log -p echo "$Name $Version is only compatible with SteamOS 3.5"
+    confirm "Are you sure you want to install $Name $Version?"
+    #> SteamOS 3.5 migration: modify config
+    Log config migrate
     Log -p echo "Creating overlays for $cf_Directories:"
 
     if list_service > /dev/null; then
         Log -p echo "0. Disabling service"
-        config load
-        service disable "$cf_Service_Directory"
+        Log service disable
         Log echo "# It's okay if unmounting fails here #"
         Log Test unmount_all
     fi
@@ -75,7 +87,7 @@ function perform_install {
 
     # store config
     Log -p echo "4. Storing configuration..."
-    Log config --store
+    Log config store
 
     # copy service unit to $cf_Systemd_Directory
     Log -p echo "5. Copying service to $cf_Systemd_Directory"
@@ -92,64 +104,11 @@ function perform_install {
     stat_service
 }
 
-function perform_update {
-    # Ensure the files are generated using the same settings as before
-    local units; units=$(ls -- "$cf_Service_Directory")
-    Log -p echo "Updating [ $units ] to latest version"
-
-    # disable units
-    Log -p echo "1. Disabling service"
-    service disable "$cf_Service_Directory"
-    Log echo "# It's okay if unmounting fails here #"
-    Log Test unmount_all
-
-    # delete units
-    Log -p echo "2. Removing service"
-    service remove "$cf_Service_Directory"
-    Log rm -v "$cf_Service_Directory"/*
-
-    # generate new units
-    Log -p echo "3. Generating service"
-    Log -p generate_service
-
-    # update the disk image
-    Log -p echo "4. Generating new mount directories"
-    Log -p update_disk_image
-
-    # copy new units to location
-    Log -p echo "5. Copying service to $cf_Systemd_Directory"
-    Log cp -v "$cf_Service_Directory"/*.service "$cf_Systemd_Directory"
-
-    # enable units
-    Log -p echo "6. Enabling service"
-    service enable "$cf_Service_Directory"
-    Log -p echo -e "Done!\n"
-}
-
-function confirm_remove_all {
-    local user_confirmed_delete
-    while [ ! "$user_confirmed_delete" ]; do
-        local input
-        read -rp "$* [y|N] " input
-        case $input in
-            Y*|y*)
-                user_confirmed_delete="yes"
-            ;;
-            N*|n*|"")
-                exit 0;
-            ;;
-            *)
-                echo "Try again."
-            ;;
-        esac
-    done
-}
-
-function perform_remove_all {
+function perform_remove {
     if [[ ! "$*" =~ "please" ]]; then
-        confirm_remove_all "Are you sure you want to uninstall $Name?"
+        confirm "Are you sure you want to uninstall $Name?"
         echo "This will remove all files in $Name's overlays, including any software you've installed!"
-        confirm_remove_all "Are you absolutely sure you want to do this?"
+        confirm "Are you absolutely sure you want to do this?"
     fi
     Log -p echo "Uninstalling $Name"
 
