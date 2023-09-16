@@ -1,3 +1,6 @@
+# Important Note:
+Rwfus v0.5.0.b1 is *only* rated for compatibility with SteamOS 3.5 (Beta, at the time of writing)
+
 ## Rwfus: Read-Write OverlayFS for your Steam Deck!
 ---
 
@@ -9,7 +12,6 @@ Directories covered in a default installation:
 | /etc/pacman.d     | `pacman` configuration |
 | /usr              | Programs and libraries |
 | /var/cache/pacman | Package cache          |
-| /var/lib/pacman   | Package metadata       |
 
 ### * Jank warning
 
@@ -32,7 +34,7 @@ Then you're all set! Remember to periodically run `pacman -Sy` to update your re
 ### Usage:
 
 ```
-Rwfus v0.4.1
+Rwfus v0.5.0.b1
 Carry Pacman across SteamOS updates!
 
 USAGE:
