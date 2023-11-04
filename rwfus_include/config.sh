@@ -44,7 +44,7 @@ CF_DEFAULT=(
     # Default Overlay list
     #   /usr : contains /usr/bin, /usr/lib; popular install locations. On path.
     #   /etc/pacman.d /var/lib/pacman /var/cache/pacman : store pacman state
-    [cf_Directories]="/usr /etc/pacman.d /var/lib/pacman /var/cache/pacman"
+    [cf_Directories]="/usr /etc/pacman.d /etc/environment /var/lib/pacman /var/cache/pacman"
     # Default directories (These can be changed in the config file. Run `rwfus --gen-config` to generate an example file.)
     #   Note: Items have been intentionally left blank.
     #   See function change_base below.
